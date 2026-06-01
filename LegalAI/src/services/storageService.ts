@@ -146,12 +146,13 @@ export const getStorageSize = async (): Promise<number> => {
     /* Get all keys in AsyncStorage */
     const keys = await AsyncStorage.getAllKeys();
 
-    /* Read all values for those keys — returns an array of [key, value] pairs */
-    const entries = await AsyncStorage.multiGet(keys);
+    /* Read all values for those keys — returns an object mapping keys to values */
+    const entries = await AsyncStorage.getMany(keys);
 
     /* Sum up the lengths of all values to estimate total storage */
     let totalSize = 0;
-    for (const [_key, value] of entries) {
+    for (const key of keys) {
+      const value = entries[key];
       if (value) {
         totalSize += value.length; // Approximate byte count
       }

@@ -64,7 +64,7 @@ export const generateResponse = async (prompt: string): Promise<string> => {
    * This simulates the time the real model would take to generate a response.
    * We use `new Promise` with `setTimeout` because there's no built-in sleep in JS.
    */
-  await new Promise(resolve => setTimeout(resolve, delay));
+  await new Promise<void>(resolve => setTimeout(resolve, delay));
 
   /*
    * Pick a random response from our array.
@@ -88,7 +88,7 @@ export const generateResponse = async (prompt: string): Promise<string> => {
  */
 export const generateSummary = async (documentText: string): Promise<string> => {
   /* Simulate processing time */
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  await new Promise<void>(resolve => setTimeout(resolve, 1500));
 
   /* Return a placeholder summary mentioning the document's length */
   return `Document Summary (${documentText.length} characters analyzed):\n\nThis document appears to contain legal provisions and clauses. Key topics identified include contractual obligations, party responsibilities, and compliance requirements.\n\nNote: This is a simulated summary. Full AI summarization will be available when the Qwen 2.5 3B model is integrated.`;
@@ -109,7 +109,7 @@ export const answerQuestion = async (
   documentText: string,       // The document context to answer from
 ): Promise<string> => {
   /* Simulate processing time */
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  await new Promise<void>(resolve => setTimeout(resolve, 1500));
 
   /* Return a placeholder answer that references the question */
   return `Regarding your question: "${question}"\n\nBased on the document content (${documentText.length} characters), here is my analysis:\n\nThe document contains relevant information that addresses this query. For a complete and accurate answer, the full AI model integration (Phase 5) is required.\n\nNote: This is a simulated response.`;

@@ -38,7 +38,7 @@ const CHUNK_SIZE = 1000;
  */
 export const extractText = async (fileUri: string): Promise<string> => {
   /* Simulate PDF processing time — real extraction takes time for large files */
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise<void>(resolve => setTimeout(resolve, 1000));
 
   /*
    * Return simulated legal text for testing.
