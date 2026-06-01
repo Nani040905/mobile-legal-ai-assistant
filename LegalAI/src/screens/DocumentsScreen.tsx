@@ -48,11 +48,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 /*
- * react-native-document-picker — Native file picker for selecting files.
+ * @react-native-documents/picker — Native file picker for selecting files.
  * pick() opens the device's file picker UI.
  * types contains predefined MIME type constants (pdf, images, etc.).
  */
-import { pick, types } from 'react-native-document-picker';
+import { pick, types, isCancel } from '@react-native-documents/picker';
 
 /* Import our custom components */
 import Header from '../components/Header';              // Screen header
@@ -134,10 +134,10 @@ const DocumentsScreen: React.FC = () => {
     } catch (error: any) {
       /*
        * Check if the user simply cancelled the picker.
-       * react-native-document-picker throws an error when cancelled,
+       * @react-native-documents/picker throws an error when cancelled,
        * but we don't want to show an error message for that.
        */
-      if (error?.code !== 'DOCUMENT_PICKER_CANCELED') {
+      if (!isCancel(error)) {
         /* Show an alert for actual errors */
         Alert.alert(
           'Upload Failed',
