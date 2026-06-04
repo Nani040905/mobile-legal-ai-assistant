@@ -83,3 +83,110 @@ mobile-legal-ai-assistant/
 │
 └── README.md
 ```
+
+## Module Dependency Diagram
+
+```mermaid
+graph TD
+    subgraph Screens
+        HS["HomeScreen"]
+        CS["ChatScreen"]
+        DS["DocumentsScreen"]
+        DDS["DocumentDetailsScreen"]
+        SS["SettingsScreen"]
+    end
+
+    subgraph Components
+        CI["ChatInput"]
+        CM["ChatMessage"]
+        DC["DocumentCard"]
+        HD["Header"]
+    end
+
+    subgraph Stores
+        CHAT["useChatStore"]
+        DOC["useDocumentStore"]
+    end
+
+    subgraph Services
+        LLM["llmService"]
+        MM["modelManager"]
+        PDF["pdfService"]
+        RET["retrievalService"]
+        STG["storageService"]
+    end
+
+    subgraph Utils
+        THEME["theme.ts"]
+    end
+
+    CS --> CI
+    CS --> CM
+    CS --> HD
+    CS --> CHAT
+
+    DS --> DC
+    DS --> HD
+    DS --> DOC
+
+    DDS --> HD
+    DDS --> DOC
+    DDS --> LLM
+    DDS --> RET
+
+    SS --> HD
+    SS --> MM
+
+    HS --> HD
+
+    CHAT --> LLM
+    CHAT --> STG
+    DOC --> PDF
+    DOC --> STG
+
+    LLM --> MM
+    MM --> |"llama.rn"| LLAMA["Native LLM"]
+    PDF --> |"PdfExtractor"| NATIVE_PDF["Native PDF"]
+
+    CI --> THEME
+    CM --> THEME
+    DC --> THEME
+    HD --> THEME
+```
+
+## Service Layer Architecture
+
+```mermaid
+graph LR
+    subgraph Public["Public API"]
+        GR["generateResponse()"]
+        GS["generateSummary()"]
+        AQ["answerQuestion()"]
+    end
+
+    subgraph Model["Model Management"]
+        INIT["initializeModel()"]
+        REL["releaseModel()"]
+        DL["downloadModel()"]
+        SW["setActiveModel()"]
+        STOP["stopCompletion()"]
+    end
+
+    subgraph Retrieval["Retrieval"]
+        SEARCH["search()"]
+        GET_CTX["getRelevantContext()"]
+        TOK["tokenize()"]
+    end
+
+    GR --> INIT
+    GS --> INIT
+    AQ --> SEARCH
+    SEARCH --> TOK
+    AQ --> GET_CTX
+    GET_CTX --> SEARCH
+
+    style Public fill:#4caf50,color:#fff
+    style Model fill:#2196f3,color:#fff
+    style Retrieval fill:#ff9800,color:#000
+```
+

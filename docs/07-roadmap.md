@@ -1,5 +1,52 @@
 # Development Roadmap
 
+## Progress Overview
+
+```mermaid
+pie title Phase Completion Status
+    "Complete (Phase 1-7)" : 7
+    "Remaining (Phase 8-17)" : 10
+```
+
+## Timeline
+
+```mermaid
+gantt
+    title Mobile Legal AI Assistant — Development Phases
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+
+    section Foundation
+    Phase 1 - Setup           :done, p1, 2026-05-20, 1d
+    Phase 2 - UI              :done, p2, after p1, 2d
+    Phase 3 - Storage         :done, p3, after p2, 1d
+    Phase 4 - PDF Processing  :done, p4, after p3, 2d
+
+    section AI Core
+    Phase 5 - Local AI        :done, p5, after p4, 2d
+    Phase 6 - Doc Intelligence :done, p6, after p5, 2d
+    Phase 7 - Polish          :done, p7, after p6, 2d
+
+    section Hardening
+    Phase 8 - Production      :active, p8, after p7, 3d
+    Phase 8.5 - Retrieval Eval :p85, after p8, 1d
+    Phase 8.6 - Hallucination :p86, after p85, 1d
+    Phase 8.7 - Citations     :p87, after p86, 1d
+
+    section Evaluation
+    Phase 9 - Benchmarks      :p9, after p87, 2d
+
+    section Knowledge
+    Phase 10.5 - Corpus Mgr   :p105, after p9, 2d
+    Phase 11.5 - Conv Memory  :p115, after p105, 1d
+
+    section Features
+    Phase 13 - Risk Analyzer  :p13, after p115, 3d
+    Phase 15 - ELI5 Mode      :p15, after p13, 1d
+    Phase 16 - Telemetry      :p16, after p15, 1d
+    Phase 17 - Security       :p17, after p16, 2d
+```
+
 ## Phase 1 ✅
 
 **Project Setup**

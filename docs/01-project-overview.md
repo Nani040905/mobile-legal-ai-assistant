@@ -4,6 +4,64 @@
 
 Provide a fully offline AI assistant specialized in Indian Law for legal document analysis on Android. All processing happens on-device — no cloud, no internet required after model download.
 
+## System Architecture Overview
+
+```mermaid
+graph TB
+    subgraph UI["UI Layer (React Native)"]
+        HS["HomeScreen"]
+        CS["ChatScreen"]
+        DS["DocumentsScreen"]
+        DDS["DocumentDetailsScreen"]
+        SS["SettingsScreen"]
+        RRS["RiskReportScreen (Planned)"]
+    end
+
+    subgraph State["State Management (Zustand)"]
+        CStore["useChatStore"]
+        DStore["useDocumentStore"]
+    end
+
+    subgraph Services["Service Layer"]
+        LLM["llmService.ts"]
+        MM["modelManager.ts"]
+        PDF["pdfService.ts"]
+        RET["retrievalService.ts"]
+        STG["storageService.ts"]
+    end
+
+    subgraph Native["Native Layer (Kotlin)"]
+        PE["PdfExtractorModule"]
+        LLAMA["llama.rn / llama.cpp"]
+    end
+
+    subgraph Storage["On-Device Storage"]
+        AS["AsyncStorage"]
+        FS["Filesystem (RNFS)"]
+        MODEL["GGUF Model File"]
+    end
+
+    CS --> CStore
+    DS --> DStore
+    DDS --> DStore
+    DDS --> LLM
+    CS --> LLM
+    SS --> MM
+
+    CStore --> LLM
+    CStore --> STG
+    DStore --> PDF
+    DStore --> STG
+
+    LLM --> MM
+    MM --> LLAMA
+    PDF --> PE
+
+    STG --> AS
+    MM --> FS
+    MM --> MODEL
+```
+
 ## Current Features (Phase 1–7 Complete)
 
 ### Chat
@@ -55,6 +113,32 @@ Examples:
 - Disclaimer: responses are informational only, not legal advice
 
 ## Planned Features (Phase 8–17)
+
+```mermaid
+graph LR
+    P8["Phase 8\nProduction\nHardening"] --> P85["Phase 8.5\nRetrieval\nBenchmark"]
+    P85 --> P86["Phase 8.6\nHallucination\nDetection"]
+    P86 --> P87["Phase 8.7\nCitation\nEngine"]
+    P87 --> P9["Phase 9\nEvaluation\nFramework"]
+    P9 --> P105["Phase 10.5\nCorpus\nManager"]
+    P105 --> P115["Phase 11.5\nConversation\nMemory"]
+    P115 --> P13["Phase 13\nRisk\nAnalyzer"]
+    P13 --> P15["Phase 15\nELI5\nMode"]
+    P15 --> P16["Phase 16\nPerformance\nDashboard"]
+    P16 --> P17["Phase 17\nSecurity\n& Privacy"]
+
+    style P8 fill:#ff9800,color:#000
+    style P85 fill:#ff9800,color:#000
+    style P86 fill:#ff9800,color:#000
+    style P87 fill:#ff9800,color:#000
+    style P9 fill:#2196f3,color:#fff
+    style P105 fill:#2196f3,color:#fff
+    style P115 fill:#4caf50,color:#fff
+    style P13 fill:#4caf50,color:#fff
+    style P15 fill:#4caf50,color:#fff
+    style P16 fill:#9c27b0,color:#fff
+    style P17 fill:#9c27b0,color:#fff
+```
 
 - Production hardening (crash recovery, context budget, citation engine)
 - Retrieval quality evaluation and hallucination detection
