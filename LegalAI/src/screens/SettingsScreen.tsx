@@ -17,8 +17,8 @@
  * - Theme toggle (light/dark mode)
  */
 
-/* Import React — required for JSX */
-import React from 'react';
+/* Import React and lifecycle hooks */
+import React, { useState, useEffect } from 'react';
 
 /* Import RN components needed for this screen */
 import {
@@ -28,6 +28,7 @@ import {
   TouchableOpacity, // Touchable wrapper with opacity feedback
   ScrollView,       // Scrollable container for overflow
   Alert,            // Native alert dialog — used for confirmation prompts
+  ActivityIndicator, // Loader for model loading state
 } from 'react-native';
 
 /* SafeAreaView prevents content from overlapping device notches */
@@ -42,6 +43,11 @@ import Header from '../components/Header';
 /* Import theme tokens for consistent styling */
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 
+/* Import modelManager and store hooks */
+import modelManager, { ModelStatus } from '../services/modelManager';
+import useDocumentStore from '../store/useDocumentStore';
+import useChatStore from '../store/useChatStore';
+
 /*
  * SettingsScreen — Displays model info, storage stats, and a clear data button.
  */
@@ -49,34 +55,132 @@ const SettingsScreen: React.FC = () => {
   /* Get navigation object for back button */
   const navigation = useNavigation();
 
+  /* Local state to track the model status reactively */
+  const [modelStatus, setModelStatus] = useState<ModelStatus>(modelManager.getStatus());
+
+  /* Access document store state and clear action */
+  const documents = useDocumentStore(state => state.documents);
+  const clearDocuments = useDocumentStore(state => state.clearAll);
+
+  /* Access chat store state and clear action */
+  const messages = useChatStore(state => state.messages);
+  const clearMessages = useChatStore(state => state.clearMessages);
+
+  /* Calculate document statistics */
+  const documentCount = documents.length;
+  const totalDocSizeKB = documents.reduce((sum, doc) => sum + doc.size, 0) / 1024;
+  const totalDocSizeMB = (totalDocSizeKB / 1024).toFixed(2);
+
+  /* Subscribe to model status changes from the manager */
+  useEffect(() => {
+    /* Check initially if file exists to update status to idle or not_downloaded */
+    modelManager.checkModelExists();
+
+    /* Subscribe and return cleanup function */
+    const unsubscribe = modelManager.addStatusListener((status) => {
+      setModelStatus(status);
+    });
+    return unsubscribe;
+  }, []);
+
+  /*
+   * handleLoadModel — Triggers loading the model in the background
+   */
+  const handleLoadModel = async () => {
+    if (modelStatus === 'ready' || modelStatus === 'loading') {
+      return;
+    }
+    const success = await modelManager.initializeModel();
+    if (!success) {
+      const err = modelManager.getError();
+      Alert.alert('Load Error', err || 'Failed to load model.');
+    }
+  };
+
+  /*
+   * handleUnloadModel — Releases the model from memory
+   */
+  const handleUnloadModel = async () => {
+    await modelManager.releaseModel();
+    Alert.alert('Model Unloaded', 'Model has been released from memory.');
+  };
+
   /*
    * handleClearDocuments — Shows a confirmation dialog before clearing all documents.
-   *
-   * Alert.alert() creates a native OS dialog (not a custom modal).
-   * It takes: title, message, and an array of buttons.
-   * The "Cancel" button has style: 'cancel' — it appears bold on iOS and is the default action.
-   * The "Clear" button has style: 'destructive' — it appears red on iOS to indicate danger.
    */
   const handleClearDocuments = () => {
+    if (documentCount === 0) {
+      Alert.alert('Info', 'No documents to clear.');
+      return;
+    }
+
     Alert.alert(
-      'Clear All Documents',               // Dialog title
-      'This will permanently delete all stored documents. This action cannot be undone.', // Message
+      'Clear All Documents',
+      'This will permanently delete all stored documents. This action cannot be undone.',
       [
         {
-          text: 'Cancel',                  // Dismiss button
-          style: 'cancel',                // iOS: makes it bold (default action)
+          text: 'Cancel',
+          style: 'cancel',
         },
         {
-          text: 'Clear All',              // Destructive action button
-          style: 'destructive',           // iOS: makes it red
+          text: 'Clear All',
+          style: 'destructive',
           onPress: () => {
-            // TODO: Call useDocumentStore().clearAll() when store is implemented
-            Alert.alert('Cleared', 'All documents have been removed.'); // Confirmation
+            clearDocuments();
+            Alert.alert('Cleared', 'All documents have been removed.');
           },
         },
       ],
     );
   };
+
+  /*
+   * handleClearChat — Shows a confirmation dialog before clearing chat history.
+   */
+  const handleClearChat = () => {
+    if (messages.length === 0) {
+      Alert.alert('Info', 'No chat messages to clear.');
+      return;
+    }
+
+    Alert.alert(
+      'Clear Chat History',
+      'This will permanently delete all conversation messages. This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Clear Chat',
+          style: 'destructive',
+          onPress: () => {
+            clearMessages();
+            Alert.alert('Cleared', 'Chat history has been cleared.');
+          },
+        },
+      ],
+    );
+  };
+
+  /* Helper to format model status text and style */
+  const getStatusDetails = () => {
+    switch (modelStatus) {
+      case 'ready':
+        return { text: 'Ready ✓', color: COLORS.success, dotColor: COLORS.success };
+      case 'loading':
+        return { text: 'Loading...', color: COLORS.primary, dotColor: COLORS.primary };
+      case 'idle':
+        return { text: 'Idle (Loaded on demand)', color: COLORS.textSecondary, dotColor: COLORS.border };
+      case 'error':
+        return { text: 'Error', color: COLORS.error, dotColor: COLORS.error };
+      case 'not_downloaded':
+      default:
+        return { text: 'Not Downloaded', color: COLORS.warning, dotColor: COLORS.warning };
+    }
+  };
+
+  const statusDetails = getStatusDetails();
 
   return (
     /* SafeAreaView wraps the screen — edges={['top']} adds padding for status bar */
@@ -126,10 +230,46 @@ const SettingsScreen: React.FC = () => {
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Status</Text>
             <View style={styles.statusBadge}>
-              {/* Green dot indicates the model is ready */}
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>Not loaded</Text>
+              <View style={[styles.statusDot, { backgroundColor: statusDetails.dotColor }]} />
+              <Text style={[styles.statusText, { color: statusDetails.color }]}>
+                {statusDetails.text}
+              </Text>
             </View>
+          </View>
+
+          {/* Model location details */}
+          <View style={styles.pathBox}>
+            <Text style={styles.pathTitle}>Model Path:</Text>
+            <Text style={styles.pathText} numberOfLines={2} ellipsizeMode="middle">
+              {modelManager.getModelPath()}
+            </Text>
+          </View>
+
+          {/* Action buttons to Load/Unload the model */}
+          <View style={styles.buttonRow}>
+            {modelStatus !== 'ready' ? (
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  (modelStatus === 'loading' || modelStatus === 'not_downloaded') && styles.disabledButton
+                ]}
+                disabled={modelStatus === 'loading' || modelStatus === 'not_downloaded'}
+                onPress={handleLoadModel}
+              >
+                {modelStatus === 'loading' ? (
+                  <ActivityIndicator size="small" color={COLORS.textPrimary} />
+                ) : (
+                  <Text style={styles.buttonText}>🔌 Load Model</Text>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.unloadButton]}
+                onPress={handleUnloadModel}
+              >
+                <Text style={styles.buttonText}>🔌 Unload Model</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -145,19 +285,19 @@ const SettingsScreen: React.FC = () => {
           {/* Number of stored documents */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Documents</Text>
-            <Text style={styles.infoValue}>0 files</Text>
+            <Text style={styles.infoValue}>{documentCount} files</Text>
           </View>
 
           {/* Total storage used */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Storage Used</Text>
-            <Text style={styles.infoValue}>0 MB</Text>
+            <Text style={styles.infoValue}>{totalDocSizeMB} MB</Text>
           </View>
 
           {/* Chat messages stored */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Chat Messages</Text>
-            <Text style={styles.infoValue}>0 messages</Text>
+            <Text style={styles.infoValue}>{messages.length} messages</Text>
           </View>
         </View>
 
@@ -190,17 +330,22 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.dangerZone}>
           <Text style={styles.dangerTitle}>Danger Zone</Text>
 
-          {/*
-           * Clear All Documents button.
-           * Uses error color (red) to indicate this is a destructive action.
-           * onPress shows a confirmation dialog before actually clearing.
-           */}
+          {/* Clear All Documents button */}
           <TouchableOpacity
             style={styles.dangerButton}
-            activeOpacity={0.8}    // Slight dim on press
-            onPress={handleClearDocuments} // Show confirmation dialog
+            activeOpacity={0.8}
+            onPress={handleClearDocuments}
           >
             <Text style={styles.dangerButtonText}>🗑️ Clear All Documents</Text>
+          </TouchableOpacity>
+
+          {/* Clear Chat History button */}
+          <TouchableOpacity
+            style={[styles.dangerButton, { marginTop: SPACING.md }]}
+            activeOpacity={0.8}
+            onPress={handleClearChat}
+          >
+            <Text style={styles.dangerButtonText}>🗑️ Clear Chat History</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -303,7 +448,67 @@ const styles = StyleSheet.create({
   /* Status text (e.g., "Not loaded", "Ready") */
   statusText: {
     fontSize: FONTS.body,
-    color: COLORS.warning,           // Orange to match the dot
+    fontWeight: FONTS.weightSemiBold,
+  },
+
+  /* Model file path details container */
+  pathBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginTop: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+
+  /* Path label */
+  pathTitle: {
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+    fontWeight: FONTS.weightSemiBold,
+  },
+
+  /* Path string text */
+  pathText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: COLORS.textSecondary,
+  },
+
+  /* Button row container */
+  buttonRow: {
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+  },
+
+  /* Main load/unload action button */
+  actionButton: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* Disabled state for action buttons */
+  disabledButton: {
+    backgroundColor: COLORS.border,
+    opacity: 0.5,
+  },
+
+  /* Unload button specific style (darker gray-blue border style) */
+  unloadButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.error,
+  },
+
+  /* Text inside action buttons */
+  buttonText: {
+    fontSize: FONTS.body,
+    color: COLORS.textPrimary,
     fontWeight: FONTS.weightSemiBold,
   },
 

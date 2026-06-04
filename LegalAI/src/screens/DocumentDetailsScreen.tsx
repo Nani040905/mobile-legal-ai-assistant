@@ -45,11 +45,14 @@ import Header from '../components/Header';
 /* Import our custom document store containing documents state and actions */
 import useDocumentStore, { Document } from '../store/useDocumentStore';
 
-/* Import our LLM service stubs for summarization and answering questions */
-import { generateSummary, answerQuestion } from '../services/llmService';
+/* Import our LLM service for summarization, answering questions, and status check */
+import { generateSummary, answerQuestion, isModelReady } from '../services/llmService';
 
-/* Import our PDF service stubs for extraction and chunking */
+/* Import our PDF service for extraction and chunking */
 import { extractText, splitIntoChunks } from '../services/pdfService';
+
+/* Import our BM25 retrieval service for matching relevant chunks */
+import { getRelevantContext } from '../services/retrievalService';
 
 /* Import the theme style constants (COLORS, FONTS, SPACING, RADIUS) */
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
@@ -99,6 +102,10 @@ const DocumentDetailsScreen: React.FC = () => {
 
   /* Local state to hold the answered output text */
   const [answer, setAnswer] = useState('');
+
+  /* Local states to hold real-time streaming tokens from the local LLM */
+  const [streamingSummary, setStreamingSummary] = useState('');
+  const [streamingAnswer, setStreamingAnswer] = useState('');
 
   /*
    * useEffect to trigger PDF text extraction automatically on mount if not already done.
@@ -151,25 +158,45 @@ const DocumentDetailsScreen: React.FC = () => {
    * Summarizes the extracted document text.
    */
   const handleGenerateSummary = async () => {
+    /* Step 1: Check if the AI model is loaded and ready */
+    if (!isModelReady()) {
+      Alert.alert(
+        'AI Model Not Loaded',
+        'The local AI model is not loaded yet. Please go to Settings and tap "Load Model" first to enable offline summaries.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Settings', onPress: () => navigation.navigate('Settings') }
+        ]
+      );
+      return;
+    }
+
     /* If document has no text extracted, prevent summarization */
     if (!document.extractedText) {
       Alert.alert('Error', 'Please wait for text extraction to complete.');
       return;
     }
 
-    /* Set summarizing loading state to true */
+    /* Set summarizing loading state to true and reset streaming state */
     setIsSummarizing(true);
+    setStreamingSummary('');
     try {
-      /* Call the AI summary service stub with the document's text */
-      const summaryText = await generateSummary(document.extractedText);
+      /* Call the AI summary service with a callback that appends tokens */
+      const summaryText = await generateSummary(
+        document.extractedText,
+        ({ token }) => {
+          setStreamingSummary(prev => prev + token);
+        }
+      );
       /* Store the generated summary in the document store */
       updateDocumentSummary(docId, summaryText);
-    } catch (error) {
+    } catch (error: any) {
       /* Display error dialog if summarization fails */
-      Alert.alert('Summarization Error', 'Failed to generate summary.');
+      Alert.alert('Summarization Error', error?.message || 'Failed to generate summary.');
     } finally {
-      /* Set summarizing loading state to false */
+      /* Set summarizing loading state to false and clear streaming state */
       setIsSummarizing(false);
+      setStreamingSummary('');
     }
   };
 
@@ -183,6 +210,19 @@ const DocumentDetailsScreen: React.FC = () => {
       return;
     }
 
+    /* Step 1: Check if the AI model is loaded and ready */
+    if (!isModelReady()) {
+      Alert.alert(
+        'AI Model Not Loaded',
+        'The local AI model is not loaded yet. Please go to Settings and tap "Load Model" first to ask questions.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Settings', onPress: () => navigation.navigate('Settings') }
+        ]
+      );
+      return;
+    }
+
     /* If text is not extracted yet, we cannot perform question answering */
     if (!document.extractedText) {
       Alert.alert('Error', 'Please wait for text extraction to complete.');
@@ -191,19 +231,37 @@ const DocumentDetailsScreen: React.FC = () => {
 
     /* Set asking loading state to true */
     setIsAsking(true);
-    /* Clear any previous answer while loading */
+    /* Clear any previous answer and streaming state while loading */
     setAnswer('');
+    setStreamingAnswer('');
+
     try {
-      /* Call the AI Q&A service stub with the user's question and document text */
-      const answerText = await answerQuestion(question, document.extractedText);
-      /* Store the answer in the component's state to display */
+      /*
+       * RAG Step: Retrieve the most relevant chunks using BM25.
+       * document.chunks is passed to retrieve the top 3 relevant sections.
+       */
+      const relevantContext = getRelevantContext(
+        question,
+        document.chunks || []
+      );
+
+      /* Call the AI Q&A service with the user's question, retrieved context, and streaming callback */
+      const answerText = await answerQuestion(
+        question,
+        relevantContext,
+        ({ token }) => {
+          setStreamingAnswer(prev => prev + token);
+        }
+      );
+      /* Store the final answer in the component's state to display */
       setAnswer(answerText);
-    } catch (error) {
+    } catch (error: any) {
       /* Alert user of failures */
-      Alert.alert('Error', 'Failed to generate answer for your question.');
+      Alert.alert('Error', error?.message || 'Failed to generate answer for your question.');
     } finally {
-      /* Set asking loading state to false */
+      /* Set asking loading state to false and clear streaming state */
       setIsAsking(false);
+      setStreamingAnswer('');
     }
   };
 
@@ -275,11 +333,11 @@ const DocumentDetailsScreen: React.FC = () => {
         {activeTab === 'summary' ? (
           /* Render summary container content */
           <View style={styles.tabContent}>
-            {document.summary ? (
-              /* Show generated summary */
+            {document.summary || streamingSummary ? (
+              /* Show generated summary or streaming summary */
               <View style={styles.summaryBox}>
                 <Text style={styles.summaryTitle}>Document Summary</Text>
-                <Text style={styles.summaryText}>{document.summary}</Text>
+                <Text style={styles.summaryText}>{streamingSummary || document.summary}</Text>
               </View>
             ) : (
               /* Render Generate Summary Call-to-Action */
@@ -342,11 +400,11 @@ const DocumentDetailsScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Show the output answer if it exists */}
-              {answer ? (
+              {/* Show the output answer if it exists or is streaming */}
+              {answer || streamingAnswer ? (
                 <View style={styles.answerBox}>
                   <Text style={styles.answerTitle}>AI Response</Text>
-                  <Text style={styles.answerText}>{answer}</Text>
+                  <Text style={styles.answerText}>{streamingAnswer || answer}</Text>
                 </View>
               ) : isAsking ? (
                 /* Show thinking/parsing message */

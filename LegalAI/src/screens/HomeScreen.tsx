@@ -16,8 +16,8 @@
  * The RootStackParamList type ensures we can only navigate to valid routes.
  */
 
-/* Import React and hooks — useRef for storing the animated value, useEffect for triggering animation on mount */
-import React, { useRef, useEffect } from 'react';
+/* Import React and hooks — useRef for storing the animated value, useEffect for triggering animation on mount, useState for status state */
+import React, { useRef, useEffect, useState } from 'react';
 
 /* Import all the React Native components we need for this screen */
 import {
@@ -43,6 +43,9 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 
 /* Import theme tokens for consistent visual design */
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+
+/* Import modelManager for reactive AI model status */
+import modelManager, { ModelStatus } from '../services/modelManager';
 
 /*
  * Type alias for the navigation prop on this screen.
@@ -106,6 +109,18 @@ const HomeScreen: React.FC = () => {
    * This navigation object has methods like navigate(), goBack(), push(), etc.
    */
   const navigation = useNavigation<NavigationProp>();
+
+  /* Local state to track the model status reactively on Home screen */
+  const [modelStatus, setModelStatus] = useState<ModelStatus>(modelManager.getStatus());
+
+  /* Check model status initially and subscribe to updates */
+  useEffect(() => {
+    modelManager.checkModelExists();
+    const unsubscribe = modelManager.addStatusListener((status) => {
+      setModelStatus(status);
+    });
+    return unsubscribe;
+  }, []);
 
   /*
    * useRef(new Animated.Value(0)) — Creates a persistent animated value.
@@ -237,7 +252,7 @@ const HomeScreen: React.FC = () => {
           ))}
 
           {/* ─── FOOTER ─── */}
-          {/* Version info and offline badge at the bottom of the screen */}
+          {/* Version info and offline badges at the bottom of the screen */}
           <View style={styles.footer}>
             {/* Offline indicator — lets users know the app works without internet */}
             <View style={styles.offlineBadge}>
@@ -245,6 +260,33 @@ const HomeScreen: React.FC = () => {
               <View style={styles.offlineDot} />
               <Text style={styles.offlineText}>Fully Offline</Text>
             </View>
+
+            {/* AI Status Badge */}
+            {(() => {
+              /* Get color and text based on active model status state */
+              const getAiBadgeDetails = () => {
+                switch (modelStatus) {
+                  case 'ready':
+                    return { text: 'AI Ready ✓', color: COLORS.success };
+                  case 'loading':
+                    return { text: 'AI Loading...', color: COLORS.primary };
+                  case 'idle':
+                    return { text: 'AI Idle', color: COLORS.textSecondary };
+                  case 'error':
+                    return { text: 'AI Error', color: COLORS.error };
+                  case 'not_downloaded':
+                  default:
+                    return { text: 'AI Not Loaded', color: COLORS.warning };
+                }
+              };
+              const aiBadge = getAiBadgeDetails();
+              return (
+                <View style={[styles.offlineBadge, { marginLeft: SPACING.sm }]}>
+                  <View style={[styles.offlineDot, { backgroundColor: aiBadge.color }]} />
+                  <Text style={[styles.offlineText, { color: aiBadge.color }]}>{aiBadge.text}</Text>
+                </View>
+              );
+            })()}
 
             {/* Version number — helps with bug reports and support */}
             <Text style={styles.versionText}>v0.1.0 MVP</Text>
