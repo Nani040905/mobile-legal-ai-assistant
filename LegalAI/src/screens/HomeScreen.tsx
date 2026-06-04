@@ -270,6 +270,8 @@ const HomeScreen: React.FC = () => {
                     return { text: 'AI Ready ✓', color: COLORS.success };
                   case 'loading':
                     return { text: 'AI Loading...', color: COLORS.primary };
+                  case 'downloading':
+                    return { text: 'Downloading AI...', color: COLORS.primary };
                   case 'idle':
                     return { text: 'AI Idle', color: COLORS.textSecondary };
                   case 'error':
