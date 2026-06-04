@@ -20,173 +20,249 @@
  * 1. App starts → status is 'not_downloaded' or 'idle' (depending on file check)
  * 2. User taps "Load Model" → initializeModel() → status becomes 'loading'
  * 3. llama.rn finishes loading → status becomes 'ready'
- * 4. User taps "Unload Model" or app backgrounds → releaseModel() → status becomes 'idle'
- */
-
-/* Import the initLlama function from llama.rn — this is the main entry point */
+ * 4. User taps "Unload Model" or app backgrounds → releaseModel() → sta/* Import the initLlama function from llama.rn — this is the main entry point */
 import { initLlama, LlamaContext } from 'llama.rn';
 
 /* Import RNFS to check if the model file exists on the device filesystem */
 import RNFS from 'react-native-fs';
 
-/*
- * ModelStatus — Union type representing the possible states of the LLM.
- *
- * 'not_downloaded' — The .gguf file does not exist on the device.
- * 'idle'           — The file exists but the model is not loaded into memory.
- * 'loading'        — The model is currently being loaded (takes 10-30 seconds).
- * 'ready'          — The model is loaded and ready to accept prompts.
- * 'error'          — An error occurred during loading.
- */
-export type ModelStatus = 'not_downloaded' | 'idle' | 'loading' | 'ready' | 'error';
+/* Import AsyncStorage to persist the model preference and load state */
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/* Keys for storing preferences in AsyncStorage */
+const ACTIVE_MODEL_KEY = 'legal-ai-active-model-id';
+const SHOULD_LOAD_KEY = 'legal-ai-model-should-load';
+
+/* ModelConfig interface defining the metadata of a local GGUF model option */
+export interface ModelConfig {
+  id: string;
+  name: string;
+  filename: string;
+  downloadUrl: string;
+  sizeLabel: string;
+  description: string;
+}
+
+/* List of available offline LLM models for selection */
+export const MODELS: ModelConfig[] = [
+  {
+    id: 'qwen-2.5-3b',
+    name: 'Qwen 2.5 3B (Recommended)',
+    filename: 'qwen2.5-3b-instruct-q4_k_m.gguf',
+    downloadUrl: 'https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf',
+    sizeLabel: '1.96 GB',
+    description: 'Best quality & reasoning. Ideal for devices with 6GB+ RAM.',
+  },
+  {
+    id: 'qwen-2.5-1.5b',
+    name: 'Qwen 2.5 1.5B (Light)',
+    filename: 'qwen2.5-1.5b-instruct-q4_k_m.gguf',
+    downloadUrl: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf',
+    sizeLabel: '1.13 GB',
+    description: 'Fast response times. Balanced for lower memory usage.',
+  },
+  {
+    id: 'llama-3.2-1b',
+    name: 'Llama 3.2 1B (Ultra-Light)',
+    filename: 'llama-3.2-1b-instruct-q4_k_m.gguf',
+    downloadUrl: 'https://huggingface.co/hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf',
+    sizeLabel: '0.81 GB',
+    description: 'Extremely fast. Minimal RAM footprint, fits all devices.',
+  },
+];
 
 /*
- * MODEL_FILENAME — The name of the GGUF model file to look for.
- *
- * This is the Qwen 2.5 3B Instruct model quantized to Q4_K_M (4-bit).
- * Q4_K_M is the sweet spot for mobile: ~1.93 GB size, good quality output,
- * and reasonable inference speed on ARM CPUs.
+ * ModelStatus — Union type representing the possible states of the LLM.
  */
-const MODEL_FILENAME = 'qwen2.5-3b-instruct-q4_k_m.gguf';
+export type ModelStatus = 'not_downloaded' | 'downloading' | 'idle' | 'loading' | 'ready' | 'error';
 
 /*
  * MODEL_DIR — The directory where we expect the model file to be stored.
- *
- * RNFS.DocumentDirectoryPath is the app's private internal storage
- * (e.g. /data/data/com.legalai/files on Android).
- * For development, we also check /sdcard/Download/ as a fallback
- * so we can use `adb push` to deploy the model file.
  */
 const MODEL_DIR = RNFS.DocumentDirectoryPath;
 
 /*
  * DOWNLOAD_FALLBACK_DIR — Alternative path for dev/testing.
- *
- * When developing, it's easier to do:
- *   adb push model.gguf /sdcard/Download/
- * than to manually copy into the app's private directory.
  */
 const DOWNLOAD_FALLBACK_DIR = '/sdcard/Download';
 
 /*
  * StatusListener — Callback type for status change notifications.
- *
- * Components register listeners to react to model status changes
- * (e.g., updating a loading indicator or enabling/disabling the chat input).
  */
 type StatusListener = (status: ModelStatus) => void;
 
 /*
  * modelContext — The active llama.rn context, or null if not loaded.
- *
- * This is the singleton instance. Only one context exists at a time.
- * All inference calls go through this context.
  */
 let modelContext: LlamaContext | null = null;
 
 /*
  * currentStatus — The current lifecycle status of the LLM.
- *
- * Starts as 'not_downloaded' — will be updated by checkModelExists().
  */
 let currentStatus: ModelStatus = 'not_downloaded';
 
 /*
  * errorMessage — Stores the last error message if status is 'error'.
- *
- * Used by the UI to display a human-readable error string.
  */
 let errorMessage: string = '';
 
 /*
  * resolvedModelPath — The full filesystem path to the model file.
- *
- * Set by checkModelExists() once the file is found.
- * null if the file does not exist on the device.
  */
 let resolvedModelPath: string | null = null;
 
 /*
+ * downloadProgress — Current download percentage (0 to 100).
+ */
+let downloadProgress: number = 0;
+
+/*
+ * progressListeners — Registered callbacks for download progress notifications.
+ */
+const progressListeners: ((progress: number) => void)[] = [];
+
+/*
+ * activeDownloadJobId — The job ID returned by RNFS.downloadFile to allow cancellation.
+ */
+let activeDownloadJobId: number | null = null;
+
+/*
  * listeners — Array of registered status change listeners.
- *
- * Components call addStatusListener() to subscribe and receive
- * status updates without polling.
  */
 const listeners: StatusListener[] = [];
 
 /*
+ * activeModel — The currently active model configuration.
+ */
+let activeModel: ModelConfig = MODELS[0];
+
+/*
+ * isInitialized — Tracks if saved preferences have been loaded from disk.
+ */
+let isInitialized = false;
+
+/*
+ * isCancelled — Tracks if the current text generation process was aborted.
+ */
+let isCancelled = false;
+
+/*
  * notifyListeners — Broadcasts the current status to all registered listeners.
- *
- * Called internally whenever the status changes (loading → ready, etc.).
- * Each listener receives the new status value.
  */
 const notifyListeners = () => {
-  /* Iterate over all registered listener callbacks */
   listeners.forEach(listener => listener(currentStatus));
 };
 
 /*
  * setStatus — Updates the current model status and notifies listeners.
- *
- * @param status — The new ModelStatus value.
- *
- * This is the ONLY function that modifies currentStatus.
- * Centralizing status updates ensures listeners are always notified.
  */
 const setStatus = (status: ModelStatus) => {
-  /* Update the module-level status variable */
   currentStatus = status;
-  /* Notify all registered UI listeners about the change */
   notifyListeners();
 };
 
 /*
+ * loadSavedModelPreference — Loads user preferences from AsyncStorage.
+ */
+const loadSavedModelPreference = async () => {
+  try {
+    const savedModelId = await AsyncStorage.getItem(ACTIVE_MODEL_KEY);
+    if (savedModelId) {
+      const found = MODELS.find(m => m.id === savedModelId);
+      if (found) {
+        activeModel = found;
+        console.log('[ModelManager] Loaded active model preference:', activeModel.id);
+      }
+    }
+  } catch (err) {
+    console.error('[ModelManager] Error loading model ID preference:', err);
+  }
+
+  // Check file existence for the active model
+  const pathToCheck = `${MODEL_DIR}/${activeModel.filename}`;
+  const existsInPrimary = await RNFS.exists(pathToCheck);
+  let exists = existsInPrimary;
+  resolvedModelPath = existsInPrimary ? pathToCheck : null;
+
+  if (!exists && RNFS.ExternalDirectoryPath) {
+    const externalPath = `${RNFS.ExternalDirectoryPath}/${activeModel.filename}`;
+    const existsInExternal = await RNFS.exists(externalPath);
+    if (existsInExternal) {
+      resolvedModelPath = externalPath;
+      exists = true;
+    }
+  }
+
+  if (!exists) {
+    const fallbackPath = `${DOWNLOAD_FALLBACK_DIR}/${activeModel.filename}`;
+    const existsInFallback = await RNFS.exists(fallbackPath);
+    if (existsInFallback) {
+      resolvedModelPath = fallbackPath;
+      exists = true;
+    }
+  }
+
+  if (exists) {
+    setStatus('idle');
+    try {
+      const shouldLoadStr = await AsyncStorage.getItem(SHOULD_LOAD_KEY);
+      if (shouldLoadStr === 'true') {
+        console.log('[ModelManager] Model was previously loaded. Autoloading...');
+        initializeModel().catch(err => {
+          console.error('[ModelManager] Startup autoload failed:', err);
+        });
+      }
+    } catch (err) {
+      console.error('[ModelManager] Error checking should-load preference:', err);
+    }
+  } else {
+    setStatus('not_downloaded');
+  }
+};
+
+/*
  * checkModelExists — Checks if the GGUF model file exists on the device.
- *
- * Checks two locations in order:
- * 1. App's internal directory (MODEL_DIR) — production location
- * 2. /sdcard/Download/ — development convenience (adb push target)
- *
- * Updates resolvedModelPath and sets status to 'idle' if found,
- * or 'not_downloaded' if not found.
- *
- * @returns true if the model file exists, false otherwise.
  */
 const checkModelExists = async (): Promise<boolean> => {
   try {
-    /* First, check the app's private internal storage directory */
-    const primaryPath = `${MODEL_DIR}/${MODEL_FILENAME}`;
-    /* RNFS.exists() returns a Promise<boolean> — true if file exists */
+    if (!isInitialized) {
+      isInitialized = true;
+      await loadSavedModelPreference();
+      return currentStatus === 'idle' || currentStatus === 'ready';
+    }
+
+    const primaryPath = `${MODEL_DIR}/${activeModel.filename}`;
     const existsInPrimary = await RNFS.exists(primaryPath);
 
     if (existsInPrimary) {
-      /* Model found in the primary location */
       resolvedModelPath = primaryPath;
-      /* Update status to idle (file exists but not loaded yet) */
       setStatus('idle');
       return true;
     }
 
-    /* Fallback: check /sdcard/Download/ for development convenience */
-    const fallbackPath = `${DOWNLOAD_FALLBACK_DIR}/${MODEL_FILENAME}`;
-    /* Check if the file exists in the fallback location */
+    if (RNFS.ExternalDirectoryPath) {
+      const externalPath = `${RNFS.ExternalDirectoryPath}/${activeModel.filename}`;
+      const existsInExternal = await RNFS.exists(externalPath);
+      if (existsInExternal) {
+        resolvedModelPath = externalPath;
+        setStatus('idle');
+        return true;
+      }
+    }
+
+    const fallbackPath = `${DOWNLOAD_FALLBACK_DIR}/${activeModel.filename}`;
     const existsInFallback = await RNFS.exists(fallbackPath);
 
     if (existsInFallback) {
-      /* Model found in the fallback (development) location */
       resolvedModelPath = fallbackPath;
-      /* Update status to idle */
       setStatus('idle');
       return true;
     }
 
-    /* Model file not found in either location */
     resolvedModelPath = null;
-    /* Update status to not_downloaded */
     setStatus('not_downloaded');
     return false;
   } catch (error) {
-    /* If filesystem check fails, treat as not downloaded */
     console.error('[ModelManager] Error checking model file:', error);
     resolvedModelPath = null;
     setStatus('not_downloaded');
@@ -196,72 +272,44 @@ const checkModelExists = async (): Promise<boolean> => {
 
 /*
  * initializeModel — Loads the GGUF model into memory and creates an inference context.
- *
- * This is the most expensive operation in the app — it reads ~2 GB from disk
- * and allocates memory for the model weights, KV cache, and scratch buffers.
- * Typically takes 10-30 seconds on a mid-range Android device.
- *
- * The function first checks if the model file exists, then calls llama.rn's
- * initLlama() with carefully tuned parameters for mobile use.
- *
- * @returns true if the model was loaded successfully, false otherwise.
  */
 const initializeModel = async (): Promise<boolean> => {
   try {
-    /* If already loaded, skip re-initialization */
     if (modelContext && currentStatus === 'ready') {
       console.log('[ModelManager] Model is already loaded and ready.');
       return true;
     }
 
-    /* Check if the model file exists on the device */
     const exists = await checkModelExists();
     if (!exists || !resolvedModelPath) {
-      /* Cannot load what doesn't exist */
-      errorMessage = `Model file "${MODEL_FILENAME}" not found. Push it to ${DOWNLOAD_FALLBACK_DIR}/ via adb.`;
+      errorMessage = `Model file "${activeModel.filename}" not found. Go to Settings to download it.`;
       setStatus('error');
       return false;
     }
 
-    /* Update status to loading — UI should show a spinner or progress bar */
     setStatus('loading');
-    /* Clear any previous error message */
     errorMessage = '';
 
     console.log(`[ModelManager] Loading model from: ${resolvedModelPath}`);
 
-    /*
-     * initLlama() — The core llama.rn function that:
-     * 1. Reads the GGUF file from disk
-     * 2. Allocates memory for the model weights
-     * 3. Creates a KV cache for inference context
-     * 4. Returns a LlamaContext object for running completions
-     *
-     * Configuration parameters:
-     * - model: Full filesystem path to the .gguf file
-     * - n_ctx: Context window size in tokens (2048 is conservative/safe)
-     * - n_gpu_layers: 0 = CPU only (avoids GPU compatibility issues on Android)
-     * - use_mlock: true = lock model weights in RAM (prevents paging to disk)
-     * - n_threads: 4 = number of CPU threads for inference (good for most devices)
-     */
     modelContext = await initLlama({
-      model: resolvedModelPath,   // Full path to the GGUF model file
-      n_ctx: 2048,                // Context window: 2048 tokens (~8K characters)
-      n_gpu_layers: 0,            // CPU-only: avoids Adreno GPU crashes
-      use_mlock: true,            // Lock model in RAM: prevents swap-to-disk slowdowns
-      n_threads: 4,               // 4 threads: good balance for quad/octa-core mobile CPUs
+      model: resolvedModelPath,
+      n_ctx: 2048,
+      n_gpu_layers: 0,
+      use_mlock: true,
+      n_threads: 4,
     });
 
-    /* Model loaded successfully — update status to ready */
     console.log('[ModelManager] Model loaded successfully!');
     setStatus('ready');
+
+    // Save should-load state so it autoloads on next startup
+    await AsyncStorage.setItem(SHOULD_LOAD_KEY, 'true');
     return true;
   } catch (error: any) {
-    /* Loading failed — update status to error and store the error message */
     console.error('[ModelManager] Failed to load model:', error);
     errorMessage = error?.message || 'Unknown error loading model';
     setStatus('error');
-    /* Clean up the failed context reference */
     modelContext = null;
     return false;
   }
@@ -269,39 +317,25 @@ const initializeModel = async (): Promise<boolean> => {
 
 /*
  * releaseModel — Unloads the model from memory and frees all resources.
- *
- * Should be called when:
- * - User taps "Unload Model" in Settings
- * - App is backgrounded for a long time (future optimization)
- * - Before loading a different model
- *
- * After release, the context is set to null and status returns to 'idle'.
  */
 const releaseModel = async (): Promise<void> => {
   try {
     if (modelContext) {
-      /* Release the llama.rn context — frees all native memory */
       await modelContext.release();
       console.log('[ModelManager] Model released successfully.');
     }
   } catch (error) {
-    /* Log but don't throw — release errors are non-critical */
     console.error('[ModelManager] Error releasing model:', error);
   } finally {
-    /* Always clear the context reference, even if release() throws */
     modelContext = null;
-    /* Set status back to idle (file still exists, just not loaded) */
     setStatus('idle');
+    // Save should-load state so it does NOT autoload on next startup
+    await AsyncStorage.setItem(SHOULD_LOAD_KEY, 'false');
   }
 };
 
 /*
  * getContext — Returns the current LlamaContext for inference.
- *
- * @returns The active LlamaContext, or null if the model is not loaded.
- *
- * This is what llmService.ts calls to get the context for completion().
- * Always check for null before using — the model might not be loaded.
  */
 const getContext = (): LlamaContext | null => {
   return modelContext;
@@ -309,8 +343,6 @@ const getContext = (): LlamaContext | null => {
 
 /*
  * getStatus — Returns the current model lifecycle status.
- *
- * @returns The current ModelStatus string.
  */
 const getStatus = (): ModelStatus => {
   return currentStatus;
@@ -318,8 +350,6 @@ const getStatus = (): ModelStatus => {
 
 /*
  * getError — Returns the last error message, if any.
- *
- * @returns The error string, or empty string if no error.
  */
 const getError = (): string => {
   return errorMessage;
@@ -327,57 +357,213 @@ const getError = (): string => {
 
 /*
  * getModelPath — Returns the expected filesystem path for the model.
- *
- * @returns The path where the model file should be located.
- *
- * Useful for the UI to display "Push model to: /sdcard/Download/..." instructions.
  */
 const getModelPath = (): string => {
-  return resolvedModelPath || `${DOWNLOAD_FALLBACK_DIR}/${MODEL_FILENAME}`;
+  return resolvedModelPath || `${MODEL_DIR}/${activeModel.filename}`;
 };
 
 /*
- * addStatusListener — Registers a callback for status change notifications.
- *
- * @param listener — Function to call when the model status changes.
- * @returns A cleanup function that removes the listener (for useEffect teardown).
- *
- * Usage in React components:
- *   useEffect(() => {
- *     const cleanup = modelManager.addStatusListener(setModelStatus);
- *     return cleanup; // Removes listener on unmount
- *   }, []);
+ * getModels — Returns all available model options.
  */
-const addStatusListener = (listener: StatusListener): (() => void) => {
-  /* Add the listener to our internal array */
-  listeners.push(listener);
+const getModels = (): ModelConfig[] => {
+  return MODELS;
+};
 
-  /*
-   * Return a cleanup function that removes this specific listener.
-   * findIndex + splice is used instead of filter to mutate the array
-   * in-place (avoids creating a new array reference on every remove).
-   */
+/*
+ * getActiveModel — Returns the currently selected active model.
+ */
+const getActiveModel = (): ModelConfig => {
+  return activeModel;
+};
+
+/*
+ * setActiveModel — Switch the active model configuration.
+ */
+const setActiveModel = async (modelId: string): Promise<boolean> => {
+  const found = MODELS.find(m => m.id === modelId);
+  if (!found) {
+    console.error(`[ModelManager] Model ID "${modelId}" not found in MODELS list.`);
+    return false;
+  }
+
+  if (activeModel.id === found.id) {
+    return true;
+  }
+
+  console.log(`[ModelManager] Switching active model to: ${found.id}`);
+
+  // Unload old model context first if loaded
+  if (modelContext) {
+    await releaseModel();
+  }
+
+  activeModel = found;
+
+  // Persist settings
+  await AsyncStorage.setItem(ACTIVE_MODEL_KEY, found.id);
+  await AsyncStorage.setItem(SHOULD_LOAD_KEY, 'false');
+
+  // Trigger check existence for new model (forces updates to status and path)
+  isInitialized = true;
+  await checkModelExists();
+
+  return true;
+};
+
+/*
+ * stopCompletion — Stops/aborts any active text generation completion.
+ */
+const stopCompletion = async (): Promise<void> => {
+  if (modelContext) {
+    isCancelled = true;
+    await modelContext.stopCompletion();
+    console.log('[ModelManager] Text generation cancelled by user request.');
+  }
+};
+
+/*
+ * getIsCancelled — Returns whether user aborted the current completion.
+ */
+const getIsCancelled = (): boolean => {
+  return isCancelled;
+};
+
+/*
+ * resetIsCancelled — Resets the cancellation flag.
+ */
+const resetIsCancelled = (): void => {
+  isCancelled = false;
+};
+
+/*
+ * addProgressListener — Registers a callback for download progress updates.
+ */
+const addProgressListener = (listener: (progress: number) => void): (() => void) => {
+  progressListeners.push(listener);
+  return () => {
+    const index = progressListeners.findIndex(l => l === listener);
+    if (index !== -1) {
+      progressListeners.splice(index, 1);
+    }
+  };
+};
+
+/*
+ * getDownloadProgress — Returns the current download progress percentage.
+ */
+const getDownloadProgress = (): number => {
+  return downloadProgress;
+};
+
+/*
+ * downloadModel — Downloads the GGUF model file from Hugging Face.
+ */
+const downloadModel = async (): Promise<boolean> => {
+  try {
+    if (currentStatus === 'downloading') {
+      console.warn('[ModelManager] Download is already in progress.');
+      return false;
+    }
+
+    setStatus('downloading');
+    downloadProgress = 0;
+    errorMessage = '';
+
+    const targetPath = `${MODEL_DIR}/${activeModel.filename}`;
+
+    const dirExists = await RNFS.exists(MODEL_DIR);
+    if (!dirExists) {
+      await RNFS.mkdir(MODEL_DIR);
+    }
+
+    const downloadUrl = activeModel.downloadUrl;
+    console.log(`[ModelManager] Downloading model from ${downloadUrl} to ${targetPath}`);
+
+    const options = {
+      fromUrl: downloadUrl,
+      toFile: targetPath,
+      begin: (res: any) => {
+        activeDownloadJobId = res.jobId;
+        console.log('[ModelManager] Download started. Job ID:', res.jobId);
+      },
+      progress: (res: any) => {
+        if (res.contentLength > 0) {
+          const ratio = res.bytesWritten / res.contentLength;
+          downloadProgress = Math.round(ratio * 100);
+          progressListeners.forEach(listener => listener(downloadProgress));
+        }
+      },
+      progressInterval: 500,
+    };
+
+    const result = await RNFS.downloadFile(options).promise;
+    activeDownloadJobId = null;
+
+    if (result.statusCode === 200) {
+      console.log('[ModelManager] Download completed successfully!');
+      resolvedModelPath = targetPath;
+      setStatus('idle');
+      return true;
+    } else {
+      throw new Error(`Download failed with HTTP status code ${result.statusCode}`);
+    }
+  } catch (error: any) {
+    console.error('[ModelManager] Error downloading model:', error);
+    activeDownloadJobId = null;
+    errorMessage = error?.message || 'Failed to download model';
+    setStatus('error');
+    return false;
+  }
+};
+
+/*
+ * cancelDownload — Cancels the active model download task.
+ */
+const cancelDownload = async (): Promise<void> => {
+  if (activeDownloadJobId !== null) {
+    try {
+      await RNFS.stopDownload(activeDownloadJobId);
+      console.log('[ModelManager] Active download stopped.');
+    } catch (error) {
+      console.error('[ModelManager] Error stopping download:', error);
+    } finally {
+      activeDownloadJobId = null;
+      downloadProgress = 0;
+      setStatus('not_downloaded');
+    }
+  }
+};
+
+const addStatusListener = (listener: StatusListener): (() => void) => {
+  listeners.push(listener);
   return () => {
     const index = listeners.findIndex(l => l === listener);
     if (index !== -1) {
-      listeners.splice(index, 1); // Remove the listener from the array
+      listeners.splice(index, 1);
     }
   };
 };
 
 /*
  * Export all public functions as a single object.
- *
- * This module acts as a singleton service — there's no class to instantiate.
- * Components import it as: import modelManager from '../services/modelManager';
  */
 export default {
-  checkModelExists,     // Check if .gguf file is on device
-  initializeModel,      // Load model into memory
-  releaseModel,         // Unload model from memory
-  getContext,           // Get the active LlamaContext
-  getStatus,            // Get current status string
-  getError,             // Get last error message
-  getModelPath,         // Get expected model file path
-  addStatusListener,    // Subscribe to status changes
+  checkModelExists,
+  initializeModel,
+  releaseModel,
+  getContext,
+  getStatus,
+  getError,
+  getModelPath,
+  addStatusListener,
+  downloadModel,
+  cancelDownload,
+  getDownloadProgress,
+  addProgressListener,
+  getModels,
+  getActiveModel,
+  setActiveModel,
+  stopCompletion,
+  getIsCancelled,
+  resetIsCancelled,
 };
