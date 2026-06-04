@@ -44,7 +44,7 @@ import Header from '../components/Header';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 
 /* Import modelManager and store hooks */
-import modelManager, { ModelStatus } from '../services/modelManager';
+import modelManager, { ModelStatus, ModelConfig } from '../services/modelManager';
 import useDocumentStore from '../store/useDocumentStore';
 import useChatStore from '../store/useChatStore';
 
@@ -57,6 +57,12 @@ const SettingsScreen: React.FC = () => {
 
   /* Local state to track the model status reactively */
   const [modelStatus, setModelStatus] = useState<ModelStatus>(modelManager.getStatus());
+
+  /* Local state to track download progress percentage */
+  const [downloadProgress, setDownloadProgress] = useState<number>(modelManager.getDownloadProgress());
+
+  /* Local state to track the active model configuration */
+  const [activeModel, setActiveModel] = useState<ModelConfig>(modelManager.getActiveModel());
 
   /* Access document store state and clear action */
   const documents = useDocumentStore(state => state.documents);
@@ -71,17 +77,90 @@ const SettingsScreen: React.FC = () => {
   const totalDocSizeKB = documents.reduce((sum, doc) => sum + doc.size, 0) / 1024;
   const totalDocSizeMB = (totalDocSizeKB / 1024).toFixed(2);
 
-  /* Subscribe to model status changes from the manager */
+  /* Subscribe to model status and progress changes from the manager */
   useEffect(() => {
     /* Check initially if file exists to update status to idle or not_downloaded */
-    modelManager.checkModelExists();
+    modelManager.checkModelExists().then(() => {
+      setActiveModel(modelManager.getActiveModel());
+      setModelStatus(modelManager.getStatus());
+    });
 
     /* Subscribe and return cleanup function */
-    const unsubscribe = modelManager.addStatusListener((status) => {
+    const unsubscribeStatus = modelManager.addStatusListener((status) => {
       setModelStatus(status);
     });
-    return unsubscribe;
+
+    const unsubscribeProgress = modelManager.addProgressListener((progress) => {
+      setDownloadProgress(progress);
+    });
+
+    return () => {
+      unsubscribeStatus();
+      unsubscribeProgress();
+    };
   }, []);
+
+  /*
+   * handleModelSelect — Handles switching the active model configuration
+   */
+  const handleModelSelect = async (modelId: string) => {
+    if (modelStatus === 'ready' || modelStatus === 'loading') {
+      Alert.alert(
+        'Switch Model',
+        'This will unload the current model from memory. Are you sure you want to proceed?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Proceed',
+            onPress: async () => {
+              const success = await modelManager.setActiveModel(modelId);
+              if (success) {
+                setActiveModel(modelManager.getActiveModel());
+                setModelStatus(modelManager.getStatus());
+              }
+            },
+          },
+        ],
+      );
+    } else {
+      const success = await modelManager.setActiveModel(modelId);
+      if (success) {
+        setActiveModel(modelManager.getActiveModel());
+        setModelStatus(modelManager.getStatus());
+      }
+    }
+  };
+
+  /*
+   * handleDownloadModel — Triggers downloading the model from Hugging Face
+   */
+  const handleDownloadModel = () => {
+    Alert.alert(
+      'Download AI Model',
+      `This will download the ${activeModel.name} model (approx. ${activeModel.sizeLabel}) to your device. We recommend connecting to Wi-Fi before proceeding.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Download',
+          onPress: async () => {
+            const success = await modelManager.downloadModel();
+            if (!success) {
+              const err = modelManager.getError();
+              Alert.alert('Download Error', err || 'Failed to download model.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  /*
+   * handleCancelDownload — Cancels the active model download
+   */
+  const handleCancelDownload = async () => {
+    await modelManager.cancelDownload();
+    Alert.alert('Cancelled', 'Download has been cancelled.');
+  };
 
   /*
    * handleLoadModel — Triggers loading the model in the background
@@ -170,6 +249,8 @@ const SettingsScreen: React.FC = () => {
         return { text: 'Ready ✓', color: COLORS.success, dotColor: COLORS.success };
       case 'loading':
         return { text: 'Loading...', color: COLORS.primary, dotColor: COLORS.primary };
+      case 'downloading':
+        return { text: `Downloading (${downloadProgress}%)`, color: COLORS.primary, dotColor: COLORS.primary };
       case 'idle':
         return { text: 'Idle (Loaded on demand)', color: COLORS.textSecondary, dotColor: COLORS.border };
       case 'error':
@@ -198,20 +279,65 @@ const SettingsScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false} // Hide scrollbar for cleaner look
       >
+        {/* ─── SELECT AI MODEL CARD ─── */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardIcon}>⚙️</Text>
+            <Text style={styles.cardTitle}>Change Active Model</Text>
+          </View>
+          <Text style={styles.helperText}>
+            Select an offline model from the list below. Active model can be loaded, downloaded, or unloaded in the controller section.
+          </Text>
+
+          {modelManager.getModels().map((item) => {
+            const isActive = item.id === activeModel.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.modelSelectCard,
+                  isActive && styles.modelSelectCardActive,
+                ]}
+                onPress={() => handleModelSelect(item.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.modelSelectHeader}>
+                  <Text style={[styles.modelSelectName, isActive && styles.modelSelectNameActive]}>
+                    {item.name}
+                  </Text>
+                  <View style={[styles.sizeBadge, isActive && styles.sizeBadgeActive]}>
+                    <Text style={[styles.sizeBadgeText, isActive && styles.sizeBadgeActiveText]}>
+                      {item.sizeLabel}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.modelSelectDesc}>{item.description}</Text>
+                <View style={styles.modelSelectFooter}>
+                  {isActive ? (
+                    <Text style={styles.activeLabel}>✓ Active Model</Text>
+                  ) : (
+                    <Text style={styles.inactiveLabel}>Tap to switch</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         {/* ─── MODEL INFO CARD ─── */}
         {/* Displays details about the local AI model */}
         <View style={styles.card}>
           {/* Card header row — icon + title */}
           <View style={styles.cardHeader}>
             <Text style={styles.cardIcon}>🤖</Text>
-            <Text style={styles.cardTitle}>AI Model</Text>
+            <Text style={styles.cardTitle}>AI Model Controller</Text>
           </View>
 
           {/* Individual info rows inside the card */}
           {/* Model name */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Model</Text>
-            <Text style={styles.infoValue}>Qwen 2.5 3B</Text>
+            <Text style={styles.infoValue}>{activeModel.name}</Text>
           </View>
 
           {/* Model format */}
@@ -245,30 +371,75 @@ const SettingsScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Action buttons to Load/Unload the model */}
+          {/* Action buttons or Progress Bar for the model */}
           <View style={styles.buttonRow}>
-            {modelStatus !== 'ready' ? (
+            {modelStatus === 'not_downloaded' && (
               <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  (modelStatus === 'loading' || modelStatus === 'not_downloaded') && styles.disabledButton
-                ]}
-                disabled={modelStatus === 'loading' || modelStatus === 'not_downloaded'}
+                style={styles.actionButton}
+                onPress={handleDownloadModel}
+              >
+                <Text style={styles.buttonText}>⬇️ Download Model ({activeModel.sizeLabel})</Text>
+              </TouchableOpacity>
+            )}
+
+            {modelStatus === 'downloading' && (
+              <View style={styles.downloadProgressContainer}>
+                <View style={styles.progressBarTrack}>
+                  <View style={[styles.progressBarFill, { width: `${downloadProgress}%` }]} />
+                </View>
+                <Text style={styles.progressPercentText}>{downloadProgress}% Downloaded</Text>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.unloadButton, { marginTop: SPACING.md }]}
+                  onPress={handleCancelDownload}
+                >
+                  <Text style={styles.buttonText}>❌ Cancel Download</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {modelStatus === 'idle' && (
+              <TouchableOpacity
+                style={styles.actionButton}
                 onPress={handleLoadModel}
               >
-                {modelStatus === 'loading' ? (
-                  <ActivityIndicator size="small" color={COLORS.textPrimary} />
-                ) : (
-                  <Text style={styles.buttonText}>🔌 Load Model</Text>
-                )}
+                <Text style={styles.buttonText}>🔌 Load Model</Text>
               </TouchableOpacity>
-            ) : (
+            )}
+
+            {modelStatus === 'loading' && (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.disabledButton]}
+                disabled={true}
+              >
+                <ActivityIndicator size="small" color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            )}
+
+            {modelStatus === 'ready' && (
               <TouchableOpacity
                 style={[styles.actionButton, styles.unloadButton]}
                 onPress={handleUnloadModel}
               >
                 <Text style={styles.buttonText}>🔌 Unload Model</Text>
               </TouchableOpacity>
+            )}
+
+            {modelStatus === 'error' && (
+              <View style={{ flex: 1 }}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={async () => {
+                    const exists = await modelManager.checkModelExists();
+                    if (exists) {
+                      handleLoadModel();
+                    } else {
+                      handleDownloadModel();
+                    }
+                  }}
+                >
+                  <Text style={styles.buttonText}>🔄 Retry Operation</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </View>
@@ -482,6 +653,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
 
+  /* Download progress container */
+  downloadProgressContainer: {
+    flex: 1,
+    alignItems: 'center',
+    width: '100%',
+  },
+
+  /* Track background */
+  progressBarTrack: {
+    height: 8,
+    width: '100%',
+    backgroundColor: COLORS.border,
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    marginBottom: SPACING.xs,
+  },
+
+  /* Active progress bar fill */
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+  },
+
+  /* Progress percentage label */
+  progressPercentText: {
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+    fontWeight: FONTS.weightRegular,
+  },
+
   /* Main load/unload action button */
   actionButton: {
     flex: 1,
@@ -548,6 +749,78 @@ const styles = StyleSheet.create({
     fontSize: FONTS.body,            // 16px
     color: COLORS.error,            // Red text
     fontWeight: FONTS.weightSemiBold,
+  },
+
+  /* Helper text for instructions */
+  helperText: {
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.md,
+    lineHeight: 20,
+  },
+
+  /* Model selection card styling */
+  modelSelectCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  modelSelectCardActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.05)', // Subtle gold tint
+    borderColor: COLORS.primary, // Gold border
+  },
+  modelSelectHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
+  modelSelectName: {
+    fontSize: FONTS.body,
+    fontWeight: FONTS.weightSemiBold,
+    color: COLORS.textPrimary,
+  },
+  modelSelectNameActive: {
+    color: COLORS.primary, // Gold
+  },
+  modelSelectDesc: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: SPACING.sm,
+  },
+  modelSelectFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  sizeBadge: {
+    backgroundColor: COLORS.surfaceVariant,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+  },
+  sizeBadgeActive: {
+    backgroundColor: COLORS.primary,
+  },
+  sizeBadgeText: {
+    fontSize: 11,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.textSecondary,
+  },
+  sizeBadgeActiveText: {
+    color: COLORS.background,
+  },
+  activeLabel: {
+    fontSize: 11,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.primary,
+  },
+  inactiveLabel: {
+    fontSize: 11,
+    color: COLORS.textMuted,
   },
 });
 
