@@ -1,116 +1,302 @@
 /*
- * llmService.ts — Interface for the local LLM (Large Language Model).
+ * llmService.ts — Service for interacting with the local LLM.
  *
- * PURPOSE: Provides a clean API for other parts of the app to interact
- * with the AI model. Currently a STUB that returns simulated responses.
- * In Phase 5, this will be replaced with actual llama.cpp integration.
+ * PURPOSE: Provides a clean API for the rest of the app to generate AI responses,
+ * document summaries, and question answers using the on-device Qwen 2.5 3B model
+ * running via llama.rn (React Native bindings for llama.cpp).
  *
  * DESIGN DECISIONS:
- * - Async interface (returns Promise) — the real llama.cpp calls will be async,
- *   so using async now means no refactoring needed when we swap in the real model.
- * - Simulated delay (1-2 seconds) — gives the UI a realistic feel during development.
- * - The stub responses are legal-themed — helps test the UI with realistic content.
+ * - All functions check modelManager.getStatus() before attempting inference.
+ *   If the model is not loaded, they throw a clear error message.
+ * - Prompt templates use the Qwen 2.5 ChatML format (<|im_start|>/<|im_end|>).
+ * - n_predict is set conservatively (256-512 tokens) to keep response times
+ *   reasonable on mobile hardware (~10-60 seconds per response on CPU).
+ * - Stop tokens include both the ChatML end token and common EOS markers
+ *   to prevent the model from running past its intended response.
+ * - Streaming callbacks are supported for real-time token display in the UI.
  *
- * FUTURE (Phase 5):
- * - Load Qwen 2.5 3B GGUF model via llama.cpp native module
- * - Stream tokens for real-time response rendering
- * - Manage model lifecycle (load, unload, memory)
+ * ARCHITECTURE:
+ * This service sits between the UI screens and the modelManager:
+ *
+ *   Screen → llmService.generateResponse() → modelManager.getContext()
+ *         → context.completion() → streamed tokens → final response
  */
+
+/* Import the model manager singleton to access the loaded LLM context */
+import modelManager from './modelManager';
 
 /*
- * SIMULATED_RESPONSES — An array of pre-written legal-themed responses.
- * The stub randomly picks one to make testing feel more realistic.
- * These will be removed when the real LLM is integrated.
+ * STOP_WORDS — Tokens that signal the model to stop generating.
+ *
+ * These are the special tokens that Qwen 2.5 uses to mark the end of a response.
+ * Without these, the model might continue generating indefinitely or start
+ * hallucinating new conversation turns.
+ *
+ * <|im_end|> — ChatML format end-of-message marker (primary)
+ * <|endoftext|> — General end-of-text marker (fallback)
+ * </s> — Legacy sentence-end marker (some GGUF quantizations use this)
  */
-const SIMULATED_RESPONSES: string[] = [
-  /* General legal advice response */
-  'Based on the information provided, I can offer the following analysis. In general legal practice, this type of situation would typically fall under contractual obligations. However, I recommend consulting with a qualified attorney for specific legal advice tailored to your circumstances.',
-
-  /* Document analysis response */
-  'After reviewing the context, there are several key points to consider. First, the parties involved should ensure compliance with all applicable regulations. Second, any amendments to the original agreement should be documented in writing. Third, timelines specified in the contract should be strictly adhered to.',
-
-  /* Legal procedure response */
-  'This is an important legal question. Generally speaking, the applicable statute of limitations, relevant precedents, and jurisdictional requirements would all play a role in determining the appropriate course of action. I suggest gathering all relevant documentation before proceeding.',
-
-  /* Rights and obligations response */
-  'From a legal perspective, both parties have rights and obligations under the agreement. It is essential to review the specific clauses related to this matter, including any indemnification provisions, limitation of liability clauses, and dispute resolution mechanisms outlined in the contract.',
-
-  /* Due diligence response */
-  'That is a common concern in legal practice. The standard approach involves conducting thorough due diligence, reviewing all pertinent documents, and ensuring that all parties are in agreement regarding the terms and conditions. Would you like me to elaborate on any specific aspect?',
+const STOP_WORDS: string[] = [
+  '<|im_end|>',     // ChatML end-of-message — the primary stop token for Qwen 2.5
+  '<|endoftext|>',  // End-of-text — fallback for different quantization variants
+  '</s>',           // Legacy EOS — some older GGUF files use this
 ];
 
 /*
- * generateResponse — The main function other parts of the app call to get AI responses.
+ * StreamCallback — Type for the streaming token callback function.
  *
- * @param prompt — The user's question or the text to process.
- * @returns A Promise that resolves to the AI's response string.
+ * @param data — Object containing the partial token text.
  *
- * Currently this is a stub that:
- * 1. Waits 1-2 seconds (simulates model inference time)
- * 2. Returns a random pre-written response
- *
- * When llama.cpp is integrated, this function will:
- * 1. Send the prompt to the native llama.cpp module
- * 2. Receive streamed tokens
- * 3. Return the complete response
+ * When set, the completion function calls this callback for EACH token
+ * as it's generated, enabling real-time "typing" animation in the UI.
+ * If null/undefined, tokens are collected silently and returned as a batch.
  */
-export const generateResponse = async (prompt: string): Promise<string> => {
-  /* Simulate inference delay — random between 1000ms and 2000ms */
-  // Math.random() returns 0-1, so this gives us 1000-2000ms
-  const delay = 1000 + Math.random() * 1000;
+type StreamCallback = (data: { token: string }) => void;
 
-  /*
-   * Create a Promise that resolves after the delay.
-   * This simulates the time the real model would take to generate a response.
-   * We use `new Promise` with `setTimeout` because there's no built-in sleep in JS.
-   */
-  await new Promise<void>(resolve => setTimeout(resolve, delay));
-
-  /*
-   * Pick a random response from our array.
-   * Math.random() * length gives a float between 0 and array length.
-   * Math.floor() rounds down to get a valid integer index.
-   */
-  const randomIndex = Math.floor(Math.random() * SIMULATED_RESPONSES.length);
-
-  /* Return the randomly selected response */
-  return SIMULATED_RESPONSES[randomIndex];
+/*
+ * isModelReady — Quick check if the model is loaded and ready for inference.
+ *
+ * @returns true if the model is loaded and ready, false otherwise.
+ *
+ * UI components call this to decide whether to enable/disable buttons
+ * (e.g., graying out "Send" button if the model isn't loaded).
+ */
+export const isModelReady = (): boolean => {
+  /* Compare the current model status string against 'ready' */
+  return modelManager.getStatus() === 'ready';
 };
 
 /*
- * generateSummary — Generates a summary of a document's text.
+ * getModelStatus — Returns the current model lifecycle status string.
  *
- * @param documentText — The extracted text content of a PDF.
- * @returns A Promise that resolves to a summary string.
+ * @returns The ModelStatus string (not_downloaded, idle, loading, ready, error).
  *
- * STUB — Returns a placeholder summary.
- * Phase 6 will implement actual summarization using chunk-based approach.
+ * Used by the SettingsScreen to show the model status badge.
  */
-export const generateSummary = async (documentText: string): Promise<string> => {
-  /* Simulate processing time */
-  await new Promise<void>(resolve => setTimeout(resolve, 1500));
-
-  /* Return a placeholder summary mentioning the document's length */
-  return `Document Summary (${documentText.length} characters analyzed):\n\nThis document appears to contain legal provisions and clauses. Key topics identified include contractual obligations, party responsibilities, and compliance requirements.\n\nNote: This is a simulated summary. Full AI summarization will be available when the Qwen 2.5 3B model is integrated.`;
+export const getModelStatus = (): string => {
+  /* Delegate to the model manager singleton */
+  return modelManager.getStatus();
 };
 
 /*
- * answerQuestion — Answers a question about a specific document.
+ * generateResponse — Generates a free-form AI response to a user prompt.
+ *
+ * @param prompt — The user's message or question.
+ * @param onToken — Optional streaming callback for real-time token display.
+ * @returns A Promise resolving to the complete response text.
+ *
+ * This is the main function used by the Chat screen for general conversation.
+ * It wraps the prompt in Qwen 2.5's ChatML format with a legal assistant
+ * system prompt to keep responses focused and professional.
+ *
+ * Inference settings:
+ * - n_predict: 512 — max tokens to generate (keeps response time under 60s)
+ * - temperature: 0.7 — moderate creativity (not too random, not too rigid)
+ * - top_p: 0.9 — nucleus sampling (considers top 90% probability mass)
+ * - top_k: 40 — limits token selection to top 40 candidates
+ */
+export const generateResponse = async (
+  prompt: string,                  // The user's message text
+  onToken?: StreamCallback,        // Optional: called for each generated token
+): Promise<string> => {
+  /* Get the active llama.rn context from the model manager */
+  const context = modelManager.getContext();
+
+  /* If no context, the model is not loaded — throw a clear error */
+  if (!context) {
+    throw new Error(
+      'AI model is not loaded. Go to Settings → Load Model first.'
+    );
+  }
+
+  try {
+    /*
+     * context.completion() — The core inference function from llama.rn.
+     *
+     * First argument: configuration object with the prompt and parameters.
+     *   - messages: Array of ChatML-format messages (system + user)
+     *   - n_predict: Maximum number of tokens to generate
+     *   - stop: Array of stop tokens — model stops when any of these appear
+     *   - temperature: Controls randomness (0 = deterministic, 1 = very random)
+     *   - top_p: Nucleus sampling — only consider tokens in top P probability
+     *   - top_k: Only consider the K most probable next tokens
+     *
+     * Second argument: streaming callback (optional).
+     *   - Called for each token as it's generated
+     *   - Enables real-time "typing" animation in the UI
+     */
+    const result = await context.completion(
+      {
+        messages: [
+          {
+            role: 'system',  // System prompt sets the AI's behavior
+            content: 'You are a helpful legal AI assistant running offline on a mobile device. Provide clear, concise, and professional responses to legal questions. Always note that your responses are for informational purposes only and do not constitute legal advice.',
+          },
+          {
+            role: 'user',    // The actual user message
+            content: prompt,
+          },
+        ],
+        n_predict: 512,      // Maximum tokens to generate (keeps response time ~30-60s)
+        stop: STOP_WORDS,    // Stop generating when any of these tokens appear
+        temperature: 0.7,    // Moderate creativity — balanced for legal content
+        top_p: 0.9,          // Nucleus sampling — consider top 90% probability mass
+        top_k: 40,           // Only consider top 40 most probable next tokens
+      },
+      onToken,               // Pass through the streaming callback
+    );
+
+    /* Return the complete generated text */
+    return result.text.trim();
+  } catch (error: any) {
+    /* Log the error for debugging */
+    console.error('[LlmService] generateResponse error:', error);
+    /* Re-throw with a user-friendly message */
+    throw new Error(`AI generation failed: ${error?.message || 'Unknown error'}`);
+  }
+};
+
+/*
+ * generateSummary — Generates a summary of document text using the LLM.
+ *
+ * @param documentText — The full extracted text from a PDF document.
+ * @param onToken — Optional streaming callback for real-time token display.
+ * @returns A Promise resolving to the summary text.
+ *
+ * For short documents (under 3000 characters), the entire text is sent as context.
+ * For longer documents, only the first 3000 characters are used to fit within
+ * the 2048-token context window (~8K characters). Phase 6 will implement
+ * map-reduce summarization for full-length documents.
+ *
+ * The prompt instructs the model to produce a structured summary with:
+ * - Document type identification
+ * - Key parties involved
+ * - Main terms and conditions
+ * - Important dates and deadlines
+ * - Notable clauses or provisions
+ */
+export const generateSummary = async (
+  documentText: string,            // The extracted PDF text
+  onToken?: StreamCallback,        // Optional streaming callback
+): Promise<string> => {
+  /* Get the active llama.rn context */
+  const context = modelManager.getContext();
+
+  /* If no context, model is not loaded */
+  if (!context) {
+    throw new Error(
+      'AI model is not loaded. Go to Settings → Load Model first.'
+    );
+  }
+
+  /*
+   * Truncate the document text to fit within the context window.
+   * 3000 characters ≈ 750 tokens. Combined with the system prompt (~100 tokens)
+   * and output budget (256 tokens), this stays well within 2048 tokens.
+   */
+  const truncatedText = documentText.length > 3000
+    ? documentText.substring(0, 3000) + '\n\n[... document truncated for context window ...]'
+    : documentText;
+
+  try {
+    /* Run the summarization prompt through the model */
+    const result = await context.completion(
+      {
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a legal document analyst. Summarize the following legal document concisely. Include: document type, key parties, main terms, important dates, and notable clauses.',
+          },
+          {
+            role: 'user',
+            content: `Please summarize the following legal document:\n\n${truncatedText}`,
+          },
+        ],
+        n_predict: 256,      // Summaries should be concise — 256 tokens max
+        stop: STOP_WORDS,
+        temperature: 0.3,    // Low temperature — summaries should be factual, not creative
+        top_p: 0.9,
+        top_k: 40,
+      },
+      onToken,
+    );
+
+    /* Return the generated summary text */
+    return result.text.trim();
+  } catch (error: any) {
+    console.error('[LlmService] generateSummary error:', error);
+    throw new Error(`Summary generation failed: ${error?.message || 'Unknown error'}`);
+  }
+};
+
+/*
+ * answerQuestion — Answers a question about a document using provided context chunks.
  *
  * @param question — The user's question about the document.
- * @param documentText — The document's text content for context.
- * @returns A Promise that resolves to an answer string.
+ * @param contextText — The relevant text context (chunks) to answer from.
+ * @param onToken — Optional streaming callback for real-time token display.
+ * @returns A Promise resolving to the answer text.
  *
- * STUB — Returns a placeholder answer.
- * Phase 6 will implement chunk-based Q&A with relevant chunk selection.
+ * This function receives PRE-SELECTED relevant chunks from the retrieval layer
+ * (retrievalService.ts). It does NOT do its own chunk selection — that's handled
+ * by the caller (DocumentDetailsScreen or a higher-level orchestrator).
+ *
+ * The prompt instructs the model to:
+ * - Answer ONLY based on the provided context
+ * - Say "not found in the document" if the context doesn't contain the answer
+ * - Cite specific parts of the context when possible
  */
 export const answerQuestion = async (
-  question: string,           // The question the user is asking
-  documentText: string,       // The document context to answer from
+  question: string,                // The user's question
+  contextText: string,             // The relevant document chunks (pre-selected)
+  onToken?: StreamCallback,        // Optional streaming callback
 ): Promise<string> => {
-  /* Simulate processing time */
-  await new Promise<void>(resolve => setTimeout(resolve, 1500));
+  /* Get the active llama.rn context */
+  const context = modelManager.getContext();
 
-  /* Return a placeholder answer that references the question */
-  return `Regarding your question: "${question}"\n\nBased on the document content (${documentText.length} characters), here is my analysis:\n\nThe document contains relevant information that addresses this query. For a complete and accurate answer, the full AI model integration (Phase 5) is required.\n\nNote: This is a simulated response.`;
+  /* If no context, model is not loaded */
+  if (!context) {
+    throw new Error(
+      'AI model is not loaded. Go to Settings → Load Model first.'
+    );
+  }
+
+  /*
+   * Truncate context to 3000 characters to fit within the context window.
+   * The retrieval layer should already return a manageable amount of text,
+   * but this is a safety net to prevent context overflow.
+   */
+  const truncatedContext = contextText.length > 3000
+    ? contextText.substring(0, 3000) + '\n\n[... context truncated ...]'
+    : contextText;
+
+  try {
+    /* Run the Q&A prompt through the model */
+    const result = await context.completion(
+      {
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a legal document assistant. Answer the question based ONLY on the provided document context. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document.',
+          },
+          {
+            role: 'user',
+            content: `Document context:\n${truncatedContext}\n\nQuestion: ${question}`,
+          },
+        ],
+        n_predict: 512,      // Answers can be longer than summaries
+        stop: STOP_WORDS,
+        temperature: 0.3,    // Low temperature for factual accuracy
+        top_p: 0.9,
+        top_k: 40,
+      },
+      onToken,
+    );
+
+    /* Return the generated answer text */
+    return result.text.trim();
+  } catch (error: any) {
+    console.error('[LlmService] answerQuestion error:', error);
+    throw new Error(`Question answering failed: ${error?.message || 'Unknown error'}`);
+  }
 };

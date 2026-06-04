@@ -32,7 +32,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* Import our LLM service to generate AI responses */
-import { generateResponse } from '../services/llmService';
+import { generateResponse, isModelReady } from '../services/llmService';
 
 /*
  * Message — TypeScript interface defining the shape of a single chat message.
@@ -153,21 +153,51 @@ const useChatStore = create<ChatState>()(
         /* Step 1: Add the user's message immediately (instant feedback) */
         get().addMessage(text, 'user'); // get() reads current state to call addMessage
 
-        /* Step 2: Show loading state in the UI */
-        set({ isLoading: true });
-
-        try {
-          /* Step 3: Call the LLM service and wait for the response */
-          const response = await generateResponse(text);
-
-          /* Step 4: Add the AI's response to the chat */
-          get().addMessage(response, 'ai');
-        } catch (error) {
-          /* If the LLM fails, add an error message as an AI response */
+        /* Step 2: Check if the AI model is loaded before attempting inference */
+        if (!isModelReady()) {
+          /* Model not loaded — inform the user instead of crashing */
           get().addMessage(
-            'Sorry, I encountered an error processing your request. Please try again.',
+            'The AI model is not loaded yet. Please go to Settings and tap "Load Model" first.',
             'ai',
           );
+          return; // Early return — no point calling generateResponse without a model
+        }
+
+        /* Step 3: Show loading state in the UI */
+        set({ isLoading: true });
+
+        /* Generate a unique ID for the streaming AI response bubble */
+        const aiMessageId = Date.now().toString() + '_ai';
+
+        try {
+          /* Create and add an initial empty AI response message object to the list */
+          const emptyMessage = {
+            id: aiMessageId,
+            text: '',
+            sender: 'ai' as const,
+            timestamp: new Date().toISOString(),
+          };
+          set(state => ({
+            messages: [...state.messages, emptyMessage],
+          }));
+
+          /* Step 4: Call the LLM service with a streaming token callback */
+          await generateResponse(text, ({ token }) => {
+            set(state => ({
+              messages: state.messages.map(msg =>
+                msg.id === aiMessageId ? { ...msg, text: msg.text + token } : msg
+              ),
+            }));
+          });
+        } catch (error) {
+          /* If the LLM fails, update the text with an error explanation */
+          set(state => ({
+            messages: state.messages.map(msg =>
+              msg.id === aiMessageId
+                ? { ...msg, text: 'Sorry, I encountered an error processing your request. Please try again.' }
+                : msg
+            ),
+          }));
         } finally {
           /* Step 5: Always hide the loading state, whether success or error */
           set({ isLoading: false });
