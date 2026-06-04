@@ -39,15 +39,17 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 interface ChatInputProps {
   onSend: (text: string) => void; // Called with the message text when user taps send
   isLoading: boolean;              // True while AI is generating — disables the input
+  onStop?: () => void;             // Optional callback to stop/cancel text generation
 }
 
 /*
  * ChatInput — The bottom input bar component.
  *
  * Contains a TextInput for typing and a circular send button.
- * The send button shows a loading spinner when the AI is processing.
+ * The send button shows a loading spinner when the AI is processing,
+ * or a stop button when generating.
  */
-const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, onStop }) => {
   /*
    * useState('') — Local state for the text input value.
    *
@@ -85,12 +87,23 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
 
   /*
    * Determine if the send button should be disabled.
-   * Disabled when: input is empty OR AI is currently loading.
-   * This prevents:
-   * - Sending blank messages
-   * - Sending multiple messages while AI is still responding
+   * Disabled when: input is empty AND AI is not currently loading.
+   * If AI is loading, the button is used as a Stop button, so it remains active.
    */
-  const isDisabled = !text.trim() || isLoading;
+  const isDisabled = !text.trim() && !isLoading;
+
+  /*
+   * handlePress — Handles either sending the message or stopping the generation.
+   */
+  const handlePress = () => {
+    if (isLoading) {
+      if (onStop) {
+        onStop();
+      }
+    } else {
+      handleSend();
+    }
+  };
 
   return (
     /* Container — horizontal row with input field and send button */
@@ -119,26 +132,29 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
         maxLength={2000}                       // Limit message length
         editable={!isLoading}                  // Disable input while AI is working
         returnKeyType="send"                   // Show "Send" button on keyboard
-        onSubmitEditing={handleSend}           // Send on keyboard "return/send" press
+        onSubmitEditing={handlePress}          // Trigger handlePress (handles send or stop)
         blurOnSubmit={false}                   // Keep keyboard open after sending
       />
 
       {/*
-       * Send button — Circular gold button.
-       * Shows an ActivityIndicator (spinner) when loading,
-       * or an arrow icon (↑) when ready to send.
-       * Disabled state reduces opacity for visual feedback.
+       * Send button — Circular button.
+       * Shows a red Stop button (■) if loading and onStop is provided.
+       * Shows an ActivityIndicator (spinner) when loading without stop option,
+       * or a gold send button (↑) when ready to send.
        */}
       <TouchableOpacity
         style={[
           styles.sendButton,
-          isDisabled && styles.sendButtonDisabled, // Dim when disabled
+          isLoading && onStop ? styles.stopButton : (isDisabled && styles.sendButtonDisabled),
         ]}
-        onPress={handleSend}     // Fire handleSend on tap
-        disabled={isDisabled}    // Prevent taps when disabled
-        activeOpacity={0.7}      // Slight dim on press
+        onPress={handlePress}                      // Fire action on tap
+        disabled={isLoading ? !onStop : isDisabled} // Only disable if loading and no stop callback
+        activeOpacity={0.7}                        // Slight dim on press
       >
-        {isLoading ? (
+        {isLoading && onStop ? (
+          /* Show white stop square when generation is running */
+          <Text style={styles.stopIcon}>■</Text>
+        ) : isLoading ? (
           /* Show a spinning loader while AI is processing */
           <ActivityIndicator
             size="small"               // Small spinner fits inside the button
@@ -201,6 +217,16 @@ const styles = StyleSheet.create({
     fontSize: 20,                // Medium size
     color: COLORS.background,    // Dark color on gold background
     fontWeight: FONTS.weightBold, // Bold for visibility
+  },
+  /* Stop button styling — red background for cancel action */
+  stopButton: {
+    backgroundColor: '#ff4d4f', // Red/Coral accent
+  },
+  /* Stop square icon styling */
+  stopIcon: {
+    fontSize: 16,
+    color: '#ffffff', // White square
+    fontWeight: FONTS.weightBold,
   },
 });
 

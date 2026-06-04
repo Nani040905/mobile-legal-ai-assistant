@@ -84,6 +84,7 @@ const ChatScreen: React.FC = () => {
   const messages = useChatStore(state => state.messages);       // All chat messages
   const isLoading = useChatStore(state => state.isLoading);     // AI processing state
   const sendMessage = useChatStore(state => state.sendMessage); // Action to send a message
+  const stopGeneration = useChatStore(state => state.stopGeneration); // Action to stop generation
 
   /*
    * handleSend — Called when the user submits a message from ChatInput.
@@ -135,19 +136,19 @@ const ChatScreen: React.FC = () => {
       <Text style={styles.emptyIcon}>⚖️</Text>
 
       {/* Welcome heading */}
-      <Text style={styles.emptyTitle}>Ask me anything</Text>
+      <Text style={styles.emptyTitle}>Ask Indian Legal AI</Text>
 
       {/* Suggestion text — helps users know what to type */}
       <Text style={styles.emptySubtitle}>
-        Ask legal questions, get document summaries, or explore legal concepts.
+        Ask legal questions, BNS/IPC sections, or analyze legal documents under Indian jurisdiction.
       </Text>
 
       {/* Example prompts to inspire the user */}
       <View style={styles.suggestionsContainer}>
         <Text style={styles.suggestionLabel}>Try asking:</Text>
-        <Text style={styles.suggestionText}>• "What is a non-disclosure agreement?"</Text>
-        <Text style={styles.suggestionText}>• "Explain breach of contract"</Text>
-        <Text style={styles.suggestionText}>• "What are my tenant rights?"</Text>
+        <Text style={styles.suggestionText}>• "What are the key changes in Bharatiya Nyaya Sanhita (BNS)?"</Text>
+        <Text style={styles.suggestionText}>• "Explain the difference between IPC and BNS"</Text>
+        <Text style={styles.suggestionText}>• "What are my rights under the Consumer Protection Act of India?"</Text>
       </View>
     </View>
   );
@@ -232,8 +233,9 @@ const ChatScreen: React.FC = () => {
          * ChatInput — The bottom input bar.
          * onSend triggers the handleSend function above.
          * isLoading disables the input while AI is processing.
+         * onStop cancels the active model generation.
          */}
-        <ChatInput onSend={handleSend} isLoading={isLoading} />
+        <ChatInput onSend={handleSend} isLoading={isLoading} onStop={stopGeneration} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
