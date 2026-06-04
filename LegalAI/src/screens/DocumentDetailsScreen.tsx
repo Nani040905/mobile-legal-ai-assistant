@@ -125,9 +125,9 @@ const DocumentDetailsScreen: React.FC = () => {
           const chunks = splitIntoChunks(text);
           /* Update the store with the extracted text and chunks */
           updateDocumentText(docId, text, chunks);
-        } catch (error) {
+        } catch (error: any) {
           /* Show error alert if extraction fails */
-          Alert.alert('Extraction Error', 'Failed to extract text from PDF document.');
+          Alert.alert('Extraction Error', `Failed to extract text from PDF document: ${error?.message || error}`);
         } finally {
           /* Set extracting loading state to false once finished */
           setIsExtracting(false);

@@ -54,6 +54,9 @@ import { RootStackParamList } from '../navigation/AppNavigator';
  */
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 
+/* Import react-native-fs for file copy and clean up */
+import RNFS from 'react-native-fs';
+
 /* Import our custom components */
 import Header from '../components/Header';              // Screen header
 import DocumentCard from '../components/DocumentCard';  // Document list item
@@ -124,10 +127,17 @@ const DocumentsScreen: React.FC = () => {
       if (result && result.length > 0) {
         const file = result[0]; // Get the first (and only) selected file
 
-        /* Add the document to the Zustand store */
+        /* Generate a secure destination path in the app's sandboxed document folder */
+        const cleanName = (file.name || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const destPath = `${RNFS.DocumentDirectoryPath}/${Date.now()}_${cleanName}`;
+
+        /* Copy the selected file (even content:// URIs) to local files directory */
+        await RNFS.copyFile(file.uri, destPath);
+
+        /* Add the document with the local, permission-safe file:// URI to the store */
         addDocument({
           name: file.name || 'Untitled.pdf',  // Use file name, fallback to 'Untitled.pdf'
-          uri: file.uri,                       // Local file path/URI
+          uri: `file://${destPath}`,           // Local file path with file:// protocol prefix
           size: file.size || 0,                // File size in bytes (0 if unknown)
         });
       }
@@ -142,7 +152,7 @@ const DocumentsScreen: React.FC = () => {
         /* Show an alert for actual errors */
         Alert.alert(
           'Upload Failed',
-          'Could not upload the document. Please try again.',
+          `Could not upload the document: ${error?.message || error}`,
         );
       }
       /* If cancelled, silently do nothing */
@@ -155,7 +165,7 @@ const DocumentsScreen: React.FC = () => {
    * @param doc — The document to delete.
    *
    * Uses Alert.alert() with destructive styling for the delete button.
-   * Only removes from the store — actual file cleanup is for Phase 4.
+   * Removes from the store and also deletes the physical file.
    */
   const handleDeleteDocument = (doc: Document) => {
     Alert.alert(
@@ -166,7 +176,20 @@ const DocumentsScreen: React.FC = () => {
         {
           text: 'Delete',
           style: 'destructive',                    // Red text on iOS
-          onPress: () => removeDocument(doc.id),   // Remove from store
+          onPress: async () => {
+            try {
+              /* Strip file:// prefix if present to get the raw path */
+              const rawPath = doc.uri.startsWith('file://') ? doc.uri.slice(7) : doc.uri;
+              const exists = await RNFS.exists(rawPath);
+              if (exists) {
+                await RNFS.unlink(rawPath);
+              }
+            } catch (err) {
+              console.warn('[DocumentsScreen] Error removing physical file:', err);
+            }
+            /* Remove the document metadata from our store */
+            removeDocument(doc.id);
+          },
         },
       ],
     );
