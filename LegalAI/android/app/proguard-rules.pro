@@ -8,3 +8,8 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# llama.rn — Keep JNI bridge classes for on-device LLM inference
+# Without this rule, Proguard strips the native bindings and causes
+# UnsatisfiedLinkError at runtime when loading the GGUF model.
+-keep class com.rnllama.** { *; }
