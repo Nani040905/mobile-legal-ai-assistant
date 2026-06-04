@@ -27,24 +27,13 @@
  */
 const CHUNK_SIZE = 1000;
 
-/*
- * extractText — Extracts raw text content from a PDF file.
- *
- * @param fileUri — The local file path/URI of the PDF.
- * @returns A Promise that resolves to the extracted text string.
- *
- * STUB — Returns simulated legal document text.
- * Phase 4 will use a native module to actually parse PDF pages.
- */
-export const extractText = async (fileUri: string): Promise<string> => {
-  /* Simulate PDF processing time — real extraction takes time for large files */
-  await new Promise<void>(resolve => setTimeout(resolve, 1000));
+import { NativeModules } from 'react-native';
 
-  /*
-   * Return simulated legal text for testing.
-   * This gives us realistic content to test summarization and Q&A stubs.
-   * The text mentions the file URI so we can verify the right file was "processed".
-   */
+/* Access the custom Android native module */
+const { PdfExtractor } = NativeModules;
+
+/* Helper to generate simulated text if the native module is unavailable */
+const getSimulatedText = (fileUri: string): string => {
   return `LEGAL AGREEMENT
 
 This Agreement ("Agreement") is entered into as of the date of last signature below, by and between Party A ("Client") and Party B ("Service Provider").
@@ -73,7 +62,35 @@ Either party may terminate this Agreement with thirty (30) days written notice. 
 8. GOVERNING LAW
 This Agreement shall be governed by and construed in accordance with the laws of the applicable jurisdiction.
 
-[Document source: ${fileUri}]`;
+[Document source (Simulated): ${fileUri}]`;
+};
+
+/*
+ * extractText — Extracts raw text content from a PDF file.
+ *
+ * @param fileUri — The local file path/URI of the PDF.
+ * @returns A Promise that resolves to the extracted text string.
+ *
+ * Calls the custom Android Native Module to extract text offline.
+ * Falls back to simulated text if running on an unsupported platform or testing.
+ */
+export const extractText = async (fileUri: string): Promise<string> => {
+  try {
+    /* If the native module is not registered (e.g. running on iOS or tests), fall back to stub */
+    if (!PdfExtractor) {
+      console.warn('[PdfService] PdfExtractor native module is not available. Falling back to stub.');
+      /* Simulate a short processing delay for the stub fallback */
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+      return getSimulatedText(fileUri);
+    }
+
+    /* Extract actual text content from PDF file via Native Module */
+    const text = await PdfExtractor.extractText(fileUri);
+    return text;
+  } catch (error) {
+    console.error('[PdfService] Error calling native PdfExtractor:', error);
+    throw error;
+  }
 };
 
 /*
