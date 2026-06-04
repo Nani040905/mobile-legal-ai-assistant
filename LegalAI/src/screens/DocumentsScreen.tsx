@@ -52,9 +52,9 @@ import { RootStackParamList } from '../navigation/AppNavigator';
  * pick() opens the device's file picker UI.
  * types contains predefined MIME type constants (pdf, images, etc.).
  */
-import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
+import { pick, keepLocalCopy, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 
-/* Import react-native-fs for file copy and clean up */
+/* Import react-native-fs for file clean up */
 import RNFS from 'react-native-fs';
 
 /* Import our custom components */
@@ -127,17 +127,25 @@ const DocumentsScreen: React.FC = () => {
       if (result && result.length > 0) {
         const file = result[0]; // Get the first (and only) selected file
 
-        /* Generate a secure destination path in the app's sandboxed document folder */
-        const cleanName = (file.name || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
-        const destPath = `${RNFS.DocumentDirectoryPath}/${Date.now()}_${cleanName}`;
+        /* Use keepLocalCopy from the picker library to copy the file to documentDirectory */
+        const copyResult = await keepLocalCopy({
+          destination: 'documentDirectory',
+          files: [{
+            uri: file.uri,
+            fileName: `${Date.now()}_${(file.name || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_')}`
+          }]
+        });
 
-        /* Copy the selected file (even content:// URIs) to local files directory */
-        await RNFS.copyFile(file.uri, destPath);
+        const localFile = copyResult[0];
+
+        if (localFile.status === 'error') {
+          throw new Error(localFile.copyError || 'Failed to obtain local copy of picked file');
+        }
 
         /* Add the document with the local, permission-safe file:// URI to the store */
         addDocument({
           name: file.name || 'Untitled.pdf',  // Use file name, fallback to 'Untitled.pdf'
-          uri: `file://${destPath}`,           // Local file path with file:// protocol prefix
+          uri: localFile.localUri,             // Local file path (starts with file://)
           size: file.size || 0,                // File size in bytes (0 if unknown)
         });
       }
