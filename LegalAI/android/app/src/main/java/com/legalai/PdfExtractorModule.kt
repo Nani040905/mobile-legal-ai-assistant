@@ -47,8 +47,17 @@ class PdfExtractorModule(reactContext: ReactApplicationContext) : ReactContextBa
                 /* Parse the file URI string into an Android Uri object */
                 val uri = Uri.parse(fileUri)
 
-                /* Open an input stream using the content resolver to support all types of URIs */
-                val inputStream: InputStream? = reactApplicationContext.contentResolver.openInputStream(uri)
+                /* Open an input stream using contentResolver for content:// URIs, or direct FileInputStream for local files */
+                val inputStream: InputStream? = if (fileUri.startsWith("content://")) {
+                    reactApplicationContext.contentResolver.openInputStream(uri)
+                } else {
+                    // Extract path: remove "file://" prefix if present
+                    val path = if (fileUri.startsWith("file://")) fileUri.substring(7) else fileUri
+                    // Decode URL-encoded characters (like %20) just in case
+                    val decodedPath = java.net.URLDecoder.decode(path, "UTF-8")
+                    java.io.FileInputStream(decodedPath)
+                }
+
                 if (inputStream == null) {
                     promise.reject("FILE_NOT_FOUND", "Could not open input stream for URI: $fileUri")
                     return@Thread
