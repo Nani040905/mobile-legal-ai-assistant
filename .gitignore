@@ -1,0 +1,34 @@
+# ─── IDE / Editor ───
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── OS Files ───
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ─── Node / React Native (covered in LegalAI/.gitignore too) ───
+node_modules/
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+
+# ─── Android Build Artifacts ───
+*.apk
+*.aab
+*.hprof
+local.properties
+
+# ─── GGUF Model Files (too large for git, ~2 GB) ───
+*.gguf
+
+# ─── Test PDF files ───
+dummy.pdf
+
+# ─── Temporary / Cache ───
+*.log
+*.tmp
+.cache/
