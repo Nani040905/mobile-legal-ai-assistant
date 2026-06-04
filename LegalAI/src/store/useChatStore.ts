@@ -34,6 +34,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /* Import our LLM service to generate AI responses */
 import { generateResponse, isModelReady } from '../services/llmService';
 
+/* Import modelManager singleton for model persistence and cancellation */
+import modelManager from '../services/modelManager';
+
 /*
  * Message — TypeScript interface defining the shape of a single chat message.
  *
@@ -65,6 +68,7 @@ interface ChatState {
   /* ─── Actions ─── */
   addMessage: (text: string, sender: 'user' | 'ai') => void;  // Add a message to the array
   sendMessage: (text: string) => Promise<void>;                 // Send user msg + get AI response
+  stopGeneration: () => Promise<void>;                          // Cancel active generation
   clearMessages: () => void;                                    // Delete all messages
 }
 
@@ -170,6 +174,9 @@ const useChatStore = create<ChatState>()(
         const aiMessageId = Date.now().toString() + '_ai';
 
         try {
+          /* Reset cancellation flag in modelManager before starting completion */
+          modelManager.resetIsCancelled();
+
           /* Create and add an initial empty AI response message object to the list */
           const emptyMessage = {
             id: aiMessageId,
@@ -190,18 +197,37 @@ const useChatStore = create<ChatState>()(
             }));
           });
         } catch (error) {
-          /* If the LLM fails, update the text with an error explanation */
-          set(state => ({
-            messages: state.messages.map(msg =>
-              msg.id === aiMessageId
-                ? { ...msg, text: 'Sorry, I encountered an error processing your request. Please try again.' }
-                : msg
-            ),
-          }));
+          /* Check if user manually cancelled the completion */
+          if (modelManager.getIsCancelled()) {
+            set(state => ({
+              messages: state.messages.map(msg =>
+                msg.id === aiMessageId
+                  ? { ...msg, text: msg.text + ' [Generation stopped by user]' }
+                  : msg
+              ),
+            }));
+          } else {
+            /* If the LLM fails, update the text with an error explanation */
+            set(state => ({
+              messages: state.messages.map(msg =>
+                msg.id === aiMessageId
+                  ? { ...msg, text: 'Sorry, I encountered an error processing your request. Please try again.' }
+                  : msg
+              ),
+            }));
+          }
         } finally {
-          /* Step 5: Always hide the loading state, whether success or error */
+          /* Always reset the cancellation flag and hide loading state */
+          modelManager.resetIsCancelled();
           set({ isLoading: false });
         }
+      },
+
+      /*
+       * stopGeneration — Cancels active text generation in the model manager.
+       */
+      stopGeneration: async () => {
+        await modelManager.stopCompletion();
       },
 
       /*
