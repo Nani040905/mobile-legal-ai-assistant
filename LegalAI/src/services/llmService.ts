@@ -150,13 +150,13 @@ export const generateResponse = async (
 
     /* Return the complete generated text */
     return result.text.trim();
-  } catch (error: any) {
+  } catch (error) {
     /* Log the error for debugging */
     console.error('[LlmService] generateResponse error:', error);
     /* Attempt auto-recovery of model engine context */
     await modelManager.handleCrash(error);
     /* Re-throw with a user-friendly message */
-    throw new Error(`AI generation failed: ${error?.message || 'Unknown error'}`);
+    throw new Error(`AI generation failed: ${(error as any)?.message || 'Unknown error'}`);
   } finally {
     modelManager.setGenerating(false);
   }
@@ -236,10 +236,10 @@ export const generateSummary = async (
 
     /* Return the generated summary text */
     return result.text.trim();
-  } catch (error: any) {
+  } catch (error) {
     console.error('[LlmService] generateSummary error:', error);
     await modelManager.handleCrash(error);
-    throw new Error(`Summary generation failed: ${error?.message || 'Unknown error'}`);
+    throw new Error(`Summary generation failed: ${(error as any)?.message || 'Unknown error'}`);
   } finally {
     modelManager.setGenerating(false);
   }
@@ -318,10 +318,10 @@ export const answerQuestion = async (
 
     /* Return the generated answer text */
     return result.text.trim();
-  } catch (error: any) {
+  } catch (error) {
     console.error('[LlmService] answerQuestion error:', error);
     await modelManager.handleCrash(error);
-    throw new Error(`Question answering failed: ${error?.message || 'Unknown error'}`);
+    throw new Error(`Question answering failed: ${(error as any)?.message || 'Unknown error'}`);
   } finally {
     modelManager.setGenerating(false);
   }

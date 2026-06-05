@@ -306,9 +306,9 @@ const initializeModel = async (): Promise<boolean> => {
     // Save should-load state so it autoloads on next startup
     await AsyncStorage.setItem(SHOULD_LOAD_KEY, 'true');
     return true;
-  } catch (error: any) {
+  } catch (error) {
     console.error('[ModelManager] Failed to load model:', error);
-    errorMessage = error?.message || 'Unknown error loading model';
+    errorMessage = (error as any)?.message || 'Unknown error loading model';
     setStatus('error');
     modelContext = null;
     return false;
@@ -542,10 +542,10 @@ const downloadModel = async (): Promise<boolean> => {
     } else {
       throw new Error(`Download failed with HTTP status code ${result.statusCode}`);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('[ModelManager] Error downloading model:', error);
     activeDownloadJobId = null;
-    errorMessage = error?.message || 'Failed to download model';
+    errorMessage = (error as any)?.message || 'Failed to download model';
     setStatus('error');
     return false;
   }
