@@ -24,6 +24,7 @@
 
 /* Import the model manager singleton to access the loaded LLM context */
 import modelManager from './modelManager';
+import { buildBudgetedContext } from './contextBudget';
 
 /*
  * STOP_WORDS — Tokens that signal the model to stop generating.
@@ -195,13 +196,19 @@ export const generateSummary = async (
   }
 
   /*
-   * Truncate the document text to fit within the context window.
-   * 3000 characters ≈ 750 tokens. Combined with the system prompt (~100 tokens)
-   * and output budget (256 tokens), this stays well within 2048 tokens.
+   * Use context budget manager to select as many paragraphs as possible
+   * while reserving 768 tokens for the output summary.
    */
-  const truncatedText = documentText.length > 3000
-    ? documentText.substring(0, 3000) + '\n\n[... document truncated for context window ...]'
-    : documentText;
+  const chunks = documentText.split(/\n\n+/).filter(c => c.trim().length > 0);
+  const systemPrompt = 'You are a legal document analyst specialized in Indian Law. Provide a clear, detailed, and structured plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses.';
+
+  const budgetResult = buildBudgetedContext(
+    systemPrompt,
+    chunks,
+    '',
+    1800,
+    768
+  );
 
   try {
     modelManager.setGenerating(true);
@@ -211,14 +218,14 @@ export const generateSummary = async (
         messages: [
           {
             role: 'system',
-            content: 'You are a legal document analyst specialized in Indian Law. Summarize the following legal document concisely within the Indian legal context. Include: document type, key parties, main terms, important dates, and notable clauses.',
+            content: systemPrompt,
           },
           {
             role: 'user',
-            content: `Please summarize the following legal document:\n\n${truncatedText}`,
+            content: `Please summarize the following legal document:\n\n${budgetResult.contextText}`,
           },
         ],
-        n_predict: 256,      // Summaries should be concise — 256 tokens max
+        n_predict: 768,      // Increased prediction budget for detailed summaries
         stop: STOP_WORDS,
         temperature: 0.3,    // Low temperature — summaries should be factual, not creative
         top_p: 0.9,
@@ -271,13 +278,19 @@ export const answerQuestion = async (
   }
 
   /*
-   * Truncate context to 3000 characters to fit within the context window.
-   * The retrieval layer should already return a manageable amount of text,
-   * but this is a safety net to prevent context overflow.
+   * Use context budget manager to select as many chunks as possible
+   * while reserving 512 tokens for the output answer.
    */
-  const truncatedContext = contextText.length > 3000
-    ? contextText.substring(0, 3000) + '\n\n[... context truncated ...]'
-    : contextText;
+  const contextChunks = contextText.split('\n\n---\n\n').filter(c => c.trim().length > 0);
+  const systemPrompt = 'You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document.';
+
+  const budgetResult = buildBudgetedContext(
+    systemPrompt,
+    contextChunks,
+    question,
+    1800,
+    512
+  );
 
   try {
     modelManager.setGenerating(true);
@@ -287,11 +300,11 @@ export const answerQuestion = async (
         messages: [
           {
             role: 'system',
-            content: 'You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document.',
+            content: systemPrompt,
           },
           {
             role: 'user',
-            content: `Document context:\n${truncatedContext}\n\nQuestion: ${question}`,
+            content: `Document context:\n${budgetResult.contextText}\n\nQuestion: ${question}`,
           },
         ],
         n_predict: 512,      // Answers can be longer than summaries
