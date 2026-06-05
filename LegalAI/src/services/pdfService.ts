@@ -28,6 +28,7 @@
 const CHUNK_SIZE = 1000;
 
 import { NativeModules } from 'react-native';
+import { cleanPdfText } from '../utils/textCleaner';
 
 /* Access the custom Android native module */
 const { PdfExtractor } = NativeModules;
@@ -81,12 +82,12 @@ export const extractText = async (fileUri: string): Promise<string> => {
       console.warn('[PdfService] PdfExtractor native module is not available. Falling back to stub.');
       /* Simulate a short processing delay for the stub fallback */
       await new Promise<void>(resolve => setTimeout(resolve, 1000));
-      return getSimulatedText(fileUri);
+      return cleanPdfText(getSimulatedText(fileUri));
     }
 
     /* Extract actual text content from PDF file via Native Module */
     const text = await PdfExtractor.extractText(fileUri);
-    return text;
+    return cleanPdfText(text);
   } catch (error) {
     console.error('[PdfService] Error calling native PdfExtractor:', error);
     throw error;
