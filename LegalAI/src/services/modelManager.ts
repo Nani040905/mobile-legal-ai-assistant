@@ -162,6 +162,34 @@ const setStatus = (status: ModelStatus) => {
 };
 
 /*
+ * verifyModelFile — Checks if a file exists and is of sufficient size (>= 100MB).
+ * If it is smaller, we treat it as corrupted, clean it up, and return false.
+ */
+const verifyModelFile = async (path: string): Promise<boolean> => {
+  try {
+    const exists = await RNFS.exists(path);
+    if (!exists) {
+      return false;
+    }
+    const stats = await RNFS.stat(path);
+    const MIN_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
+    if (Number(stats.size) < MIN_SIZE_BYTES) {
+      console.warn(`[ModelManager] File at ${path} is too small (${stats.size} bytes). Treating as corrupt/partial and deleting.`);
+      try {
+        await RNFS.unlink(path);
+      } catch (err) {
+        console.error(`[ModelManager] Error deleting corrupted file ${path}:`, err);
+      }
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(`[ModelManager] Error verifying model file at ${path}:`, error);
+    return false;
+  }
+};
+
+/*
  * loadSavedModelPreference — Loads user preferences from AsyncStorage.
  */
 const loadSavedModelPreference = async () => {
@@ -180,13 +208,13 @@ const loadSavedModelPreference = async () => {
 
   // Check file existence for the active model
   const pathToCheck = `${MODEL_DIR}/${activeModel.filename}`;
-  const existsInPrimary = await RNFS.exists(pathToCheck);
+  const existsInPrimary = await verifyModelFile(pathToCheck);
   let exists = existsInPrimary;
   resolvedModelPath = existsInPrimary ? pathToCheck : null;
 
   if (!exists && RNFS.ExternalDirectoryPath) {
     const externalPath = `${RNFS.ExternalDirectoryPath}/${activeModel.filename}`;
-    const existsInExternal = await RNFS.exists(externalPath);
+    const existsInExternal = await verifyModelFile(externalPath);
     if (existsInExternal) {
       resolvedModelPath = externalPath;
       exists = true;
@@ -195,7 +223,7 @@ const loadSavedModelPreference = async () => {
 
   if (!exists) {
     const fallbackPath = `${DOWNLOAD_FALLBACK_DIR}/${activeModel.filename}`;
-    const existsInFallback = await RNFS.exists(fallbackPath);
+    const existsInFallback = await verifyModelFile(fallbackPath);
     if (existsInFallback) {
       resolvedModelPath = fallbackPath;
       exists = true;
@@ -232,7 +260,7 @@ const checkModelExists = async (): Promise<boolean> => {
     }
 
     const primaryPath = `${MODEL_DIR}/${activeModel.filename}`;
-    const existsInPrimary = await RNFS.exists(primaryPath);
+    const existsInPrimary = await verifyModelFile(primaryPath);
 
     if (existsInPrimary) {
       resolvedModelPath = primaryPath;
@@ -242,7 +270,7 @@ const checkModelExists = async (): Promise<boolean> => {
 
     if (RNFS.ExternalDirectoryPath) {
       const externalPath = `${RNFS.ExternalDirectoryPath}/${activeModel.filename}`;
-      const existsInExternal = await RNFS.exists(externalPath);
+      const existsInExternal = await verifyModelFile(externalPath);
       if (existsInExternal) {
         resolvedModelPath = externalPath;
         setStatus('idle');
@@ -251,7 +279,7 @@ const checkModelExists = async (): Promise<boolean> => {
     }
 
     const fallbackPath = `${DOWNLOAD_FALLBACK_DIR}/${activeModel.filename}`;
-    const existsInFallback = await RNFS.exists(fallbackPath);
+    const existsInFallback = await verifyModelFile(fallbackPath);
 
     if (existsInFallback) {
       resolvedModelPath = fallbackPath;
@@ -494,6 +522,9 @@ const getDownloadProgress = (): number => {
  * downloadModel — Downloads the GGUF model file from Hugging Face.
  */
 const downloadModel = async (): Promise<boolean> => {
+  const targetPath = `${MODEL_DIR}/${activeModel.filename}`;
+  const tempTargetPath = `${targetPath}.tmp`;
+
   try {
     if (currentStatus === 'downloading') {
       console.warn('[ModelManager] Download is already in progress.');
@@ -504,19 +535,17 @@ const downloadModel = async (): Promise<boolean> => {
     downloadProgress = 0;
     errorMessage = '';
 
-    const targetPath = `${MODEL_DIR}/${activeModel.filename}`;
-
     const dirExists = await RNFS.exists(MODEL_DIR);
     if (!dirExists) {
       await RNFS.mkdir(MODEL_DIR);
     }
 
     const downloadUrl = activeModel.downloadUrl;
-    console.log(`[ModelManager] Downloading model from ${downloadUrl} to ${targetPath}`);
+    console.log(`[ModelManager] Downloading model from ${downloadUrl} to ${tempTargetPath}`);
 
     const options = {
       fromUrl: downloadUrl,
-      toFile: targetPath,
+      toFile: tempTargetPath,
       begin: (res: any) => {
         activeDownloadJobId = res.jobId;
         console.log('[ModelManager] Download started. Job ID:', res.jobId);
@@ -536,15 +565,39 @@ const downloadModel = async (): Promise<boolean> => {
 
     if (result.statusCode === 200) {
       console.log('[ModelManager] Download completed successfully!');
+      
+      // Remove target file if it already exists before renaming
+      const targetExists = await RNFS.exists(targetPath);
+      if (targetExists) {
+        await RNFS.unlink(targetPath);
+      }
+
+      await RNFS.moveFile(tempTargetPath, targetPath);
       resolvedModelPath = targetPath;
       setStatus('idle');
       return true;
     } else {
+      // Clean up temp file on failure
+      const tempExists = await RNFS.exists(tempTargetPath);
+      if (tempExists) {
+        await RNFS.unlink(tempTargetPath);
+      }
       throw new Error(`Download failed with HTTP status code ${result.statusCode}`);
     }
   } catch (error) {
     console.error('[ModelManager] Error downloading model:', error);
     activeDownloadJobId = null;
+
+    // Clean up temp file on error
+    try {
+      const tempExists = await RNFS.exists(tempTargetPath);
+      if (tempExists) {
+        await RNFS.unlink(tempTargetPath);
+      }
+    } catch (cleanErr) {
+      console.error('[ModelManager] Error cleaning up temp download file:', cleanErr);
+    }
+
     errorMessage = (error as any)?.message || 'Failed to download model';
     setStatus('error');
     return false;
@@ -559,8 +612,15 @@ const cancelDownload = async (): Promise<void> => {
     try {
       await RNFS.stopDownload(activeDownloadJobId);
       console.log('[ModelManager] Active download stopped.');
+
+      const targetPath = `${MODEL_DIR}/${activeModel.filename}`;
+      const tempTargetPath = `${targetPath}.tmp`;
+      const tempExists = await RNFS.exists(tempTargetPath);
+      if (tempExists) {
+        await RNFS.unlink(tempTargetPath);
+      }
     } catch (error) {
-      console.error('[ModelManager] Error stopping download:', error);
+      console.error('[ModelManager] Error stopping download / cleaning up temp file:', error);
     } finally {
       activeDownloadJobId = null;
       downloadProgress = 0;
