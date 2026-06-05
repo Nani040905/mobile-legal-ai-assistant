@@ -110,6 +110,7 @@ export const generateResponse = async (
   }
 
   try {
+    modelManager.setGenerating(true);
     /*
      * context.completion() — The core inference function from llama.rn.
      *
@@ -151,8 +152,12 @@ export const generateResponse = async (
   } catch (error: any) {
     /* Log the error for debugging */
     console.error('[LlmService] generateResponse error:', error);
+    /* Attempt auto-recovery of model engine context */
+    await modelManager.handleCrash(error);
     /* Re-throw with a user-friendly message */
     throw new Error(`AI generation failed: ${error?.message || 'Unknown error'}`);
+  } finally {
+    modelManager.setGenerating(false);
   }
 };
 
@@ -199,6 +204,7 @@ export const generateSummary = async (
     : documentText;
 
   try {
+    modelManager.setGenerating(true);
     /* Run the summarization prompt through the model */
     const result = await context.completion(
       {
@@ -225,7 +231,10 @@ export const generateSummary = async (
     return result.text.trim();
   } catch (error: any) {
     console.error('[LlmService] generateSummary error:', error);
+    await modelManager.handleCrash(error);
     throw new Error(`Summary generation failed: ${error?.message || 'Unknown error'}`);
+  } finally {
+    modelManager.setGenerating(false);
   }
 };
 
@@ -271,6 +280,7 @@ export const answerQuestion = async (
     : contextText;
 
   try {
+    modelManager.setGenerating(true);
     /* Run the Q&A prompt through the model */
     const result = await context.completion(
       {
@@ -297,6 +307,9 @@ export const answerQuestion = async (
     return result.text.trim();
   } catch (error: any) {
     console.error('[LlmService] answerQuestion error:', error);
+    await modelManager.handleCrash(error);
     throw new Error(`Question answering failed: ${error?.message || 'Unknown error'}`);
+  } finally {
+    modelManager.setGenerating(false);
   }
 };

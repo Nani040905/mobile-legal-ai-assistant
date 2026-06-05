@@ -74,7 +74,7 @@ export const MODELS: ModelConfig[] = [
 /*
  * ModelStatus — Union type representing the possible states of the LLM.
  */
-export type ModelStatus = 'not_downloaded' | 'downloading' | 'idle' | 'loading' | 'ready' | 'error';
+export type ModelStatus = 'not_downloaded' | 'downloading' | 'idle' | 'loading' | 'ready' | 'generating' | 'error';
 
 /*
  * MODEL_DIR — The directory where we expect the model file to be stored.
@@ -436,6 +436,41 @@ const resetIsCancelled = (): void => {
 };
 
 /*
+ * setGenerating — Transition model status between ready and generating states.
+ */
+const setGenerating = (generating: boolean): void => {
+  if (generating) {
+    if (currentStatus === 'ready') {
+      setStatus('generating');
+    }
+  } else {
+    if (currentStatus === 'generating') {
+      setStatus('ready');
+    }
+  }
+};
+
+/*
+ * handleCrash — Frees memory and context upon experiencing a crash, transitioning status to error.
+ */
+const handleCrash = async (error: any): Promise<void> => {
+  console.error('[ModelManager] Crash detected, initiating recovery...', error);
+  errorMessage = error?.message || 'Inference engine crashed';
+  try {
+    if (modelContext) {
+      await modelContext.release();
+    }
+  } catch (err) {
+    console.error('[ModelManager] Error releasing context during crash recovery:', err);
+  } finally {
+    modelContext = null;
+    setStatus('error');
+    // Save should-load state so it does NOT autoload on next startup and cause crash loops
+    await AsyncStorage.setItem(SHOULD_LOAD_KEY, 'false');
+  }
+};
+
+/*
  * addProgressListener — Registers a callback for download progress updates.
  */
 const addProgressListener = (listener: (progress: number) => void): (() => void) => {
@@ -566,4 +601,6 @@ export default {
   stopCompletion,
   getIsCancelled,
   resetIsCancelled,
+  setGenerating,
+  handleCrash,
 };
