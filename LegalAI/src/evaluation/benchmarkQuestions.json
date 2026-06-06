@@ -1,0 +1,352 @@
+[
+  {
+    "id": "q1",
+    "documentName": "EmploymentAgreement.txt",
+    "query": "Who is the employee under this agreement?",
+    "expectedChunkIndex": 0,
+    "expectedText": "John Doe"
+  },
+  {
+    "id": "q2",
+    "documentName": "EmploymentAgreement.txt",
+    "query": "What is the base salary of the senior software engineer?",
+    "expectedChunkIndex": 0,
+    "expectedText": "$120,000"
+  },
+  {
+    "id": "q3",
+    "documentName": "EmploymentAgreement.txt",
+    "query": "How long does the confidentiality obligation survive after termination?",
+    "expectedChunkIndex": 1,
+    "expectedText": "three (3) years"
+  },
+  {
+    "id": "q4",
+    "documentName": "EmploymentAgreement.txt",
+    "query": "Who owns the software code and inventions created by the employee?",
+    "expectedChunkIndex": 1,
+    "expectedText": "exclusive property of the Employer"
+  },
+  {
+    "id": "q5",
+    "documentName": "EmploymentAgreement.txt",
+    "query": "What is the notice period required to terminate the employment relationship?",
+    "expectedChunkIndex": 2,
+    "expectedText": "thirty (30) days prior written notice"
+  },
+  {
+    "id": "q6",
+    "documentName": "RentalAgreement.txt",
+    "query": "What is the address of the leased residential premises?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Apartment 4B, 123 Maple Street"
+  },
+  {
+    "id": "q7",
+    "documentName": "RentalAgreement.txt",
+    "query": "How long is the lease term and when does it commence?",
+    "expectedChunkIndex": 0,
+    "expectedText": "commencing on February 1, 2026"
+  },
+  {
+    "id": "q8",
+    "documentName": "RentalAgreement.txt",
+    "query": "What is the monthly rent and late fee amount?",
+    "expectedChunkIndex": 1,
+    "expectedText": "monthly rent of $2,200"
+  },
+  {
+    "id": "q9",
+    "documentName": "RentalAgreement.txt",
+    "query": "How much is the security deposit and where is it held?",
+    "expectedChunkIndex": 1,
+    "expectedText": "sum of $2,500 as security"
+  },
+  {
+    "id": "q10",
+    "documentName": "RentalAgreement.txt",
+    "query": "Can the tenant sublet the apartment?",
+    "expectedChunkIndex": 2,
+    "expectedText": "shall not sublet"
+  },
+  {
+    "id": "q11",
+    "documentName": "NDAAgreement.txt",
+    "query": "Who are the parties to this mutual non-disclosure agreement?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Zenith Tech Inc. and Nexus Labs LLC"
+  },
+  {
+    "id": "q12",
+    "documentName": "NDAAgreement.txt",
+    "query": "What technical details are included in the definition of Confidential Information?",
+    "expectedChunkIndex": 0,
+    "expectedText": "source code, product designs"
+  },
+  {
+    "id": "q13",
+    "documentName": "NDAAgreement.txt",
+    "query": "What are the exclusions from confidential information?",
+    "expectedChunkIndex": 1,
+    "expectedText": "publicly known through no breach"
+  },
+  {
+    "id": "q14",
+    "documentName": "NDAAgreement.txt",
+    "query": "For how many years does the confidentiality obligation survive?",
+    "expectedChunkIndex": 1,
+    "expectedText": "five (5) years"
+  },
+  {
+    "id": "q15",
+    "documentName": "NDAAgreement.txt",
+    "query": "What remedies does the disclosing party have in case of a breach?",
+    "expectedChunkIndex": 2,
+    "expectedText": "injunctive relief"
+  },
+  {
+    "id": "q16",
+    "documentName": "ServiceContract.txt",
+    "query": "Who is the contractor performing the services?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Sarah Miller"
+  },
+  {
+    "id": "q17",
+    "documentName": "ServiceContract.txt",
+    "query": "What digital marketing services are covered under the scope?",
+    "expectedChunkIndex": 0,
+    "expectedText": "search engine optimization"
+  },
+  {
+    "id": "q18",
+    "documentName": "ServiceContract.txt",
+    "query": "What is the monthly flat fee paid to the contractor?",
+    "expectedChunkIndex": 1,
+    "expectedText": "$5,000 per month"
+  },
+  {
+    "id": "q19",
+    "documentName": "ServiceContract.txt",
+    "query": "Is the contractor considered an employee of the client?",
+    "expectedChunkIndex": 1,
+    "expectedText": "independent contractor"
+  },
+  {
+    "id": "q20",
+    "documentName": "ServiceContract.txt",
+    "query": "What is the limit of liability for the contractor under the agreement?",
+    "expectedChunkIndex": 2,
+    "expectedText": "shall not exceed the total fees paid"
+  },
+  {
+    "id": "q21",
+    "documentName": "ConsumerComplaint.txt",
+    "query": "Where was this consumer complaint affidavit filed?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Bangalore, Karnataka"
+  },
+  {
+    "id": "q22",
+    "documentName": "ConsumerComplaint.txt",
+    "query": "What model of refrigerator was purchased and for how much?",
+    "expectedChunkIndex": 0,
+    "expectedText": "EM-990 from ElectroMax"
+  },
+  {
+    "id": "q23",
+    "documentName": "ConsumerComplaint.txt",
+    "query": "When was the formal complaint registered with customer support?",
+    "expectedChunkIndex": 1,
+    "expectedText": "December 2, 2025"
+  },
+  {
+    "id": "q24",
+    "documentName": "ConsumerComplaint.txt",
+    "query": "Which law regulates this consumer complaint for deficiency of service?",
+    "expectedChunkIndex": 1,
+    "expectedText": "Consumer Protection Act, 2019"
+  },
+  {
+    "id": "q25",
+    "documentName": "ConsumerComplaint.txt",
+    "query": "What compensation is requested for food spoilage and harassment?",
+    "expectedChunkIndex": 2,
+    "expectedText": "Rs. 20,000 as compensation"
+  },
+  {
+    "id": "q26",
+    "documentName": "FirstInformationReport.txt",
+    "query": "Which police station filed this FIR and what is the FIR number?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Vasant Kunj"
+  },
+  {
+    "id": "q27",
+    "documentName": "FirstInformationReport.txt",
+    "query": "Where did the theft incident occur?",
+    "expectedChunkIndex": 0,
+    "expectedText": "House 12, Sector C, Vasant Kunj"
+  },
+  {
+    "id": "q28",
+    "documentName": "FirstInformationReport.txt",
+    "query": "What valuable items were stolen from the complainant's house?",
+    "expectedChunkIndex": 1,
+    "expectedText": "Gold jewelry weighing approximately 50 grams"
+  },
+  {
+    "id": "q29",
+    "documentName": "FirstInformationReport.txt",
+    "query": "What sections of the Indian Penal Code or BNS have been applied?",
+    "expectedChunkIndex": 1,
+    "expectedText": "Section 380 of the Indian Penal Code"
+  },
+  {
+    "id": "q30",
+    "documentName": "FirstInformationReport.txt",
+    "query": "Who is the investigating officer assigned to this case?",
+    "expectedChunkIndex": 2,
+    "expectedText": "Sub-Inspector Anil Sharma"
+  },
+  {
+    "id": "q31",
+    "documentName": "ChargeSheet.txt",
+    "query": "In which court was this police charge sheet filed?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Metropolitan Magistrate, Saket Courts"
+  },
+  {
+    "id": "q32",
+    "documentName": "ChargeSheet.txt",
+    "query": "Who is the accused and where does he reside?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Rajesh Yadav"
+  },
+  {
+    "id": "q33",
+    "documentName": "ChargeSheet.txt",
+    "query": "What stolen item was found in the physical possession of the accused?",
+    "expectedChunkIndex": 1,
+    "expectedText": "Apple iPad Pro (Serial Number: IPAD12345)"
+  },
+  {
+    "id": "q34",
+    "documentName": "ChargeSheet.txt",
+    "query": "What sections of IPC or BNS is the accused charged with?",
+    "expectedChunkIndex": 1,
+    "expectedText": "Section 411 of the Indian Penal Code"
+  },
+  {
+    "id": "q35",
+    "documentName": "ChargeSheet.txt",
+    "query": "Who are the witnesses the prosecution proposes to examine?",
+    "expectedChunkIndex": 2,
+    "expectedText": "complainant Ramesh Patel, Sub-Inspector Anil Sharma"
+  },
+  {
+    "id": "q36",
+    "documentName": "Affidavit.txt",
+    "query": "In which court was the assets affidavit submitted?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Family Court, Bandra, Mumbai"
+  },
+  {
+    "id": "q37",
+    "documentName": "Affidavit.txt",
+    "query": "What is the deponent's occupation and monthly net income?",
+    "expectedChunkIndex": 0,
+    "expectedText": "monthly net income from consultancy fees is Rs. 1,50,000"
+  },
+  {
+    "id": "q38",
+    "documentName": "Affidavit.txt",
+    "query": "What real estate properties does Amit Sharma own?",
+    "expectedChunkIndex": 1,
+    "expectedText": "78 Marine Drive, Mumbai"
+  },
+  {
+    "id": "q39",
+    "documentName": "Affidavit.txt",
+    "query": "What are the deponent's mutual fund assets and bank deposits?",
+    "expectedChunkIndex": 1,
+    "expectedText": "Fixed Deposit of Rs. 15 Lakhs"
+  },
+  {
+    "id": "q40",
+    "documentName": "Affidavit.txt",
+    "query": "Who is the deponent verifying this affidavit of assets?",
+    "expectedChunkIndex": 2,
+    "expectedText": "deponent above-named"
+  },
+  {
+    "id": "q41",
+    "documentName": "RTIRequest.txt",
+    "query": "To which officer is this RTI application addressed?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Public Information Officer"
+  },
+  {
+    "id": "q42",
+    "documentName": "RTIRequest.txt",
+    "query": "What road repair details are requested in this application?",
+    "expectedChunkIndex": 0,
+    "expectedText": "road repair works in Ward No. 12"
+  },
+  {
+    "id": "q43",
+    "documentName": "RTIRequest.txt",
+    "query": "What is the amount and payment method for the RTI fee?",
+    "expectedChunkIndex": 1,
+    "expectedText": "fee of Rs. 10 is paid via Postal Order"
+  },
+  {
+    "id": "q44",
+    "documentName": "RTIRequest.txt",
+    "query": "Which section of the RTI Act governs transferring application to another department?",
+    "expectedChunkIndex": 1,
+    "expectedText": "Section 6(3) of the RTI Act"
+  },
+  {
+    "id": "q45",
+    "documentName": "RTIRequest.txt",
+    "query": "Who is the applicant seeking the public records?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Rajesh Kulkarni"
+  },
+  {
+    "id": "q46",
+    "documentName": "PowerOfAttorney.txt",
+    "query": "Who is appointing the attorney and where does he reside?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Vikram Malhotra"
+  },
+  {
+    "id": "q47",
+    "documentName": "PowerOfAttorney.txt",
+    "query": "Who is appointed as the attorney in this document?",
+    "expectedChunkIndex": 0,
+    "expectedText": "Sanjay Malhotra"
+  },
+  {
+    "id": "q48",
+    "documentName": "PowerOfAttorney.txt",
+    "query": "What powers are granted to the attorney regarding real estate?",
+    "expectedChunkIndex": 1,
+    "expectedText": "manage, lease, rent, and collect income"
+  },
+  {
+    "id": "q49",
+    "documentName": "PowerOfAttorney.txt",
+    "query": "When does this General Power of Attorney take effect?",
+    "expectedChunkIndex": 1,
+    "expectedText": "take effect immediately on June 15, 2026"
+  },
+  {
+    "id": "q50",
+    "documentName": "PowerOfAttorney.txt",
+    "query": "Who are the witnesses to this power of attorney?",
+    "expectedChunkIndex": 2,
+    "expectedText": "Ashok Sen"
+  }
+]

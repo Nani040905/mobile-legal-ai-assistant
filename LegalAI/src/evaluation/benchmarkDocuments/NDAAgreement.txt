@@ -1,0 +1,21 @@
+MUTUAL NON-DISCLOSURE AGREEMENT
+
+This Mutual Non-Disclosure Agreement ("Agreement") is entered into on March 1, 2026, by and between Zenith Tech Inc. and Nexus Labs LLC (individually a "Party" and collectively the "Parties").
+
+1. PURPOSE
+The Parties wish to explore a potential business relationship concerning joint software development projects. In connection with this, each Party may disclose proprietary technical and business information to the other Party.
+
+2. DEFINITION OF CONFIDENTIAL INFORMATION
+"Confidential Information" means any information disclosed by the Disclosing Party to the Receiving Party that is marked as confidential or should reasonably be understood to be confidential given the nature of the information. This includes source code, product designs, customer lists, business plans, financial projections, and patent applications.
+
+3. EXCLUSIONS FROM CONFIDENTIALITY
+Confidential Information does not include information that: (a) is or becomes publicly known through no breach by the Receiving Party; (b) was already in the Receiving Party's possession prior to disclosure; (c) is independently developed by the Receiving Party without reference to or reliance on the Disclosing Party's Confidential Information; or (d) is rightfully obtained from a third party.
+
+4. SURVIVAL TERM
+The obligations of confidentiality, non-use, and restricted disclosure set forth in this Agreement shall remain in effect for a period of five (5) years from the date of disclosure of the Confidential Information, regardless of any earlier termination of the business relationship.
+
+5. REMEDIES FOR BREACH
+The Receiving Party acknowledges that any unauthorized disclosure or use of Confidential Information will cause irreparable harm to the Disclosing Party. In addition to any other remedies available at law, the Disclosing Party shall be entitled to seek injunctive relief to prevent or restrain any breach or threatened breach of this Agreement.
+
+6. GOVERNING LAW
+This Agreement shall be governed by the laws of the State of Delaware. Any disputes arising out of this Agreement shall be resolved in the state or federal courts of Wilmington, Delaware.
