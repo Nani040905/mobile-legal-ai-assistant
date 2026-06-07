@@ -130,10 +130,22 @@ export const tokenize = (text: string): string[] => {
  * Used as the return type for the search() function so callers can
  * see both the chunk text and how relevant it was scored.
  */
-interface ScoredChunk {
+export interface ScoredChunk {
   chunk: string;   // The original chunk text
   score: number;   // The BM25 relevance score (higher = more relevant)
   index: number;   // The index of this chunk in the original chunks array
+}
+
+/*
+ * CitationSource — Represents a grounded source citation for an AI response.
+ * Includes document identification and matched chunk details.
+ */
+export interface CitationSource {
+  documentId?: string;
+  documentName: string;
+  chunkIndex: number;
+  text: string;
+  score: number;
 }
 
 /*

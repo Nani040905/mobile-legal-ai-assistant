@@ -25,6 +25,7 @@
 /* Import the model manager singleton to access the loaded LLM context */
 import modelManager from './modelManager';
 import { buildBudgetedContext } from './contextBudget';
+import { splitIntoChunks } from './pdfService';
 
 /*
  * STOP_WORDS — Tokens that signal the model to stop generating.
@@ -196,10 +197,10 @@ export const generateSummary = async (
   }
 
   /*
-   * Use context budget manager to select as many paragraphs as possible
-   * while reserving 768 tokens for the output summary.
+   * Segment the document text into smaller, token-friendly chunks of 1000 characters.
+   * This prevents large paragraphs/documents from blowing the context budget and being ignored.
    */
-  const chunks = documentText.split(/\n\n+/).filter(c => c.trim().length > 0);
+  const chunks = splitIntoChunks(documentText, 1000);
   const systemPrompt = 'You are a legal document analyst specialized in Indian Law. Provide a clear, detailed, and structured plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses.';
 
   const budgetResult = buildBudgetedContext(

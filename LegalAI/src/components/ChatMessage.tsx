@@ -32,12 +32,17 @@ import { Message } from '../store/useChatStore';
 /* Import theme tokens */
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 
+/* Import CitationSource type and CitationPanel component */
+import { CitationSource } from '../services/retrievalService';
+import { CitationPanel } from './CitationPanel';
+
 /*
  * Props interface — defines what this component accepts.
- * Only needs the message object — all display logic is derived from it.
+ * Accepts the message object and an optional citation press handler.
  */
 interface ChatMessageProps {
   message: Message; // The full message object (id, text, sender, timestamp)
+  onCitationPress?: (citation: CitationSource) => void; // Optional citation click handler
 }
 
 /*
@@ -48,7 +53,7 @@ interface ChatMessageProps {
  * - Background color (surface for AI, primary for user)
  * - Text color (white for both, but different backgrounds create contrast)
  */
-const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, onCitationPress }) => {
   /* Determine if this message is from the user (vs the AI) */
   const isUser = message.sender === 'user'; // Boolean — true for user, false for AI
 
@@ -102,6 +107,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               ⚠ Unable to fully verify answer from uploaded documents
             </Text>
           </View>
+        )}
+
+        {/* Citation Sources Panel */}
+        {!isUser && message.citations && message.citations.length > 0 && (
+          <CitationPanel citations={message.citations} onCitationPress={onCitationPress} />
         )}
 
         {/* Timestamp below the message text */}

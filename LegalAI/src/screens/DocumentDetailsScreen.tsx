@@ -51,11 +51,14 @@ import { generateSummary, answerQuestion, isModelReady } from '../services/llmSe
 /* Import our PDF service for extraction and chunking */
 import { extractText, splitIntoChunks } from '../services/pdfService';
 
-/* Import our BM25 retrieval service for matching relevant chunks */
-import { getRelevantContext, search } from '../services/retrievalService';
+/* Import our BM25 retrieval service for matching relevant chunks and citation types */
+import { getRelevantContext, search, CitationSource } from '../services/retrievalService';
 
 /* Import our answer verifier service to check for hallucinations */
 import { verifyAnswer, VerificationResult } from '../services/answerVerifier';
+
+/* Import our custom CitationPanel component */
+import { CitationPanel } from '../components/CitationPanel';
 
 /* Import the theme style constants (COLORS, FONTS, SPACING, RADIUS) */
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
@@ -112,6 +115,9 @@ const DocumentDetailsScreen: React.FC = () => {
 
   /* Local state to hold the answer verification result */
   const [verification, setVerification] = useState<VerificationResult | null>(null);
+
+  /* Local state to hold the citation sources matched */
+  const [citations, setCitations] = useState<CitationSource[]>([]);
 
   /*
    * useEffect to trigger PDF text extraction automatically on mount if not already done.
@@ -237,10 +243,11 @@ const DocumentDetailsScreen: React.FC = () => {
 
     /* Set asking loading state to true */
     setIsAsking(true);
-    /* Clear any previous answer, streaming state, and verification while loading */
+    /* Clear any previous answer, streaming state, verification, and citations while loading */
     setAnswer('');
     setStreamingAnswer('');
     setVerification(null);
+    setCitations([]);
 
     try {
       /*
@@ -251,6 +258,16 @@ const DocumentDetailsScreen: React.FC = () => {
         question,
         document.chunks || []
       );
+
+      /* Build citations array from matched search results */
+      const citationResults: CitationSource[] = retrievedChunks.map(r => ({
+        documentId: docId,
+        documentName: docName,
+        chunkIndex: r.index,
+        text: r.chunk,
+        score: r.score
+      }));
+      setCitations(citationResults);
 
       /* Format the relevant context string for the LLM */
       const relevantContext = retrievedChunks.length === 0
@@ -432,6 +449,20 @@ const DocumentDetailsScreen: React.FC = () => {
                         ⚠ Unable to fully verify answer from uploaded documents
                       </Text>
                     </View>
+                  )}
+
+                  {/* Citation Sources Panel */}
+                  {citations && citations.length > 0 && (
+                    <CitationPanel
+                      citations={citations}
+                      onCitationPress={(citation) => {
+                        Alert.alert(
+                          `${citation.documentName} — Chunk ${citation.chunkIndex + 1}`,
+                          citation.text.trim(),
+                          [{ text: 'Close', style: 'cancel' }]
+                        );
+                      }}
+                    />
                   )}
                 </View>
               ) : isAsking ? (

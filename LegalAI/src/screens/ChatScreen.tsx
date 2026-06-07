@@ -31,6 +31,7 @@ import {
   KeyboardAvoidingView,    // Adjusts layout when keyboard opens
   Platform,                // Detects iOS vs Android for platform-specific behavior
   ActivityIndicator,       // Spinning loader for the "AI is typing" indicator
+  Alert,                   // Native modal alerts
 } from 'react-native';
 
 /* SafeAreaView for notch/status bar handling */
@@ -110,18 +111,16 @@ const ChatScreen: React.FC = () => {
     }, 100); // 100ms delay — enough for React to render
   };
 
-  /*
-   * renderMessage — FlatList's renderItem callback.
-   *
-   * FlatList calls this for each visible item in the list.
-   * The `item` is a Message object from our messages array.
-   * We wrap it in a ChatMessage component for display.
-   *
-   * The { item } destructuring extracts the message from FlatList's
-   * ListRenderItemInfo object (which also contains index, separators).
-   */
+  const handleCitationPress = (citation: any) => {
+    Alert.alert(
+      `${citation.documentName} — Chunk ${citation.chunkIndex + 1}`,
+      citation.text.trim(),
+      [{ text: 'Close', style: 'cancel' }]
+    );
+  };
+
   const renderMessage = ({ item }: { item: Message }) => (
-    <ChatMessage message={item} /> // Pass the message to our bubble component
+    <ChatMessage message={item} onCitationPress={handleCitationPress} /> // Pass the message and press handler
   );
 
   /*

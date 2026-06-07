@@ -34,6 +34,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateResponse, isModelReady } from '../services/llmService';
 import modelManager from '../services/modelManager';
 import { verifyAnswer, VerificationResult } from '../services/answerVerifier';
+import { CitationSource } from '../services/retrievalService';
 
 /*
  * Message — TypeScript interface defining the shape of a single chat message.
@@ -51,6 +52,7 @@ export interface Message {
   sender: 'user' | 'ai';        // Union type — only these two values are allowed
   timestamp: string;             // ISO 8601 date string — serializable for persistence
   verification?: VerificationResult; // Hallucination verifier results
+  citations?: CitationSource[];  // Grounded citations mapping
 }
 
 /*
@@ -67,7 +69,7 @@ interface ChatState {
 
   /* ─── Actions ─── */
   addMessage: (text: string, sender: 'user' | 'ai') => void;  // Add a message to the array
-  sendMessage: (text: string, sourceChunks?: string[]) => Promise<void>; // Send user msg + get AI response
+  sendMessage: (text: string, sourceChunks?: string[], citations?: CitationSource[]) => Promise<void>; // Send user msg + get AI response
   stopGeneration: () => Promise<void>;                          // Cancel active generation
   clearMessages: () => void;                                    // Delete all messages
 }
@@ -153,7 +155,7 @@ const useChatStore = create<ChatState>()(
        * This is async because the LLM call takes time (even the stub has a delay).
        * Error handling wraps the LLM call in try/catch.
        */
-      sendMessage: async (text: string, sourceChunks?: string[]) => {
+      sendMessage: async (text: string, sourceChunks?: string[], citations?: CitationSource[]) => {
         /* Step 1: Add the user's message immediately (instant feedback) */
         get().addMessage(text, 'user'); // get() reads current state to call addMessage
 
@@ -197,12 +199,12 @@ const useChatStore = create<ChatState>()(
             }));
           });
 
-          /* Step 5: If sourceChunks are provided, run the hallucination verifier */
+          /* Step 5: If sourceChunks are provided, run the hallucination verifier and attach citations */
           if (sourceChunks && sourceChunks.length > 0) {
             const verification = verifyAnswer(finalAnswer, sourceChunks);
             set(state => ({
               messages: state.messages.map(msg =>
-                msg.id === aiMessageId ? { ...msg, verification } : msg
+                msg.id === aiMessageId ? { ...msg, verification, citations } : msg
               ),
             }));
           }
