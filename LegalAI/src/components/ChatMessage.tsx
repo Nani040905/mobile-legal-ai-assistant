@@ -95,6 +95,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           {message.text}
         </Text>
 
+        {/* Hallucination warning banner */}
+        {!isUser && message.verification && message.verification.confidence < 0.5 && (
+          <View style={styles.warningBanner}>
+            <Text style={styles.warningText}>
+              ⚠ Unable to fully verify answer from uploaded documents
+            </Text>
+          </View>
+        )}
+
         {/* Timestamp below the message text */}
         <Text style={styles.timestamp}>{formattedTime}</Text>
       </View>
@@ -176,6 +185,23 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,      // Muted gray
     marginTop: SPACING.xs,       // 4px gap from message text
     alignSelf: 'flex-end',        // Right-aligned within the bubble
+  },
+
+  /* Hallucination warning banner container */
+  warningBanner: {
+    backgroundColor: 'rgba(246, 173, 85, 0.12)', // Subtle transparent warning color
+    borderWidth: 1,
+    borderColor: COLORS.warning,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+
+  /* Warning text formatting */
+  warningText: {
+    color: COLORS.warning,
+    fontSize: FONTS.caption,
+    fontWeight: FONTS.weightSemiBold,
   },
 });
 

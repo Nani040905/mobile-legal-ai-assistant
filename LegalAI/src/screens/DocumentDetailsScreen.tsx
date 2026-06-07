@@ -52,7 +52,10 @@ import { generateSummary, answerQuestion, isModelReady } from '../services/llmSe
 import { extractText, splitIntoChunks } from '../services/pdfService';
 
 /* Import our BM25 retrieval service for matching relevant chunks */
-import { getRelevantContext } from '../services/retrievalService';
+import { getRelevantContext, search } from '../services/retrievalService';
+
+/* Import our answer verifier service to check for hallucinations */
+import { verifyAnswer, VerificationResult } from '../services/answerVerifier';
 
 /* Import the theme style constants (COLORS, FONTS, SPACING, RADIUS) */
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
@@ -106,6 +109,9 @@ const DocumentDetailsScreen: React.FC = () => {
   /* Local states to hold real-time streaming tokens from the local LLM */
   const [streamingSummary, setStreamingSummary] = useState('');
   const [streamingAnswer, setStreamingAnswer] = useState('');
+
+  /* Local state to hold the answer verification result */
+  const [verification, setVerification] = useState<VerificationResult | null>(null);
 
   /*
    * useEffect to trigger PDF text extraction automatically on mount if not already done.
@@ -231,19 +237,27 @@ const DocumentDetailsScreen: React.FC = () => {
 
     /* Set asking loading state to true */
     setIsAsking(true);
-    /* Clear any previous answer and streaming state while loading */
+    /* Clear any previous answer, streaming state, and verification while loading */
     setAnswer('');
     setStreamingAnswer('');
+    setVerification(null);
 
     try {
       /*
        * RAG Step: Retrieve the most relevant chunks using BM25.
        * document.chunks is passed to retrieve the top 3 relevant sections.
        */
-      const relevantContext = getRelevantContext(
+      const retrievedChunks = search(
         question,
         document.chunks || []
       );
+
+      /* Format the relevant context string for the LLM */
+      const relevantContext = retrievedChunks.length === 0
+        ? 'No relevant information found in the document for this query.'
+        : retrievedChunks
+            .map(r => `[Chunk ${r.index + 1}]:\n${r.chunk}`)
+            .join('\n\n---\n\n');
 
       /* Call the AI Q&A service with the user's question, retrieved context, and streaming callback */
       const answerText = await answerQuestion(
@@ -255,6 +269,11 @@ const DocumentDetailsScreen: React.FC = () => {
       );
       /* Store the final answer in the component's state to display */
       setAnswer(answerText);
+
+      /* Compute hallucination verification based on the answer and search results */
+      const sourceTexts = retrievedChunks.map(r => r.chunk);
+      const verResult = verifyAnswer(answerText, sourceTexts);
+      setVerification(verResult);
     } catch (error: any) {
       /* Alert user of failures */
       Alert.alert('Error', error?.message || 'Failed to generate answer for your question.');
@@ -405,6 +424,15 @@ const DocumentDetailsScreen: React.FC = () => {
                 <View style={styles.answerBox}>
                   <Text style={styles.answerTitle}>AI Response</Text>
                   <Text style={styles.answerText}>{streamingAnswer || answer}</Text>
+
+                  {/* Hallucination warning banner */}
+                  {verification && verification.confidence < 0.5 && (
+                    <View style={styles.warningBanner}>
+                      <Text style={styles.warningText}>
+                        ⚠ Unable to fully verify answer from uploaded documents
+                      </Text>
+                    </View>
+                  )}
                 </View>
               ) : isAsking ? (
                 /* Show thinking/parsing message */
@@ -722,6 +750,23 @@ const styles = StyleSheet.create({
     fontSize: FONTS.caption,
     color: COLORS.textMuted,
     fontStyle: 'italic',
+  },
+
+  /* Hallucination warning banner container */
+  warningBanner: {
+    backgroundColor: 'rgba(246, 173, 85, 0.12)', // Transparent warning color
+    borderWidth: 1,
+    borderColor: COLORS.warning,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+
+  /* Warning text styling */
+  warningText: {
+    color: COLORS.warning,
+    fontSize: FONTS.caption,
+    fontWeight: FONTS.weightSemiBold,
   },
 });
 

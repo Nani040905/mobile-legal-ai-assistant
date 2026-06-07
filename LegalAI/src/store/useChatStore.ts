@@ -31,11 +31,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 /* Import AsyncStorage — the React Native key-value storage API */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-/* Import our LLM service to generate AI responses */
 import { generateResponse, isModelReady } from '../services/llmService';
-
-/* Import modelManager singleton for model persistence and cancellation */
 import modelManager from '../services/modelManager';
+import { verifyAnswer, VerificationResult } from '../services/answerVerifier';
 
 /*
  * Message — TypeScript interface defining the shape of a single chat message.
@@ -45,12 +43,14 @@ import modelManager from '../services/modelManager';
  * - text: The message content
  * - sender: Either 'user' or 'ai' — determines bubble styling
  * - timestamp: When the message was created (ISO string for serialization)
+ * - verification: Optional verification result from hallucination checker
  */
 export interface Message {
   id: string;                    // Unique ID — used as key in FlatList
   text: string;                  // The message content
   sender: 'user' | 'ai';        // Union type — only these two values are allowed
   timestamp: string;             // ISO 8601 date string — serializable for persistence
+  verification?: VerificationResult; // Hallucination verifier results
 }
 
 /*
@@ -67,7 +67,7 @@ interface ChatState {
 
   /* ─── Actions ─── */
   addMessage: (text: string, sender: 'user' | 'ai') => void;  // Add a message to the array
-  sendMessage: (text: string) => Promise<void>;                 // Send user msg + get AI response
+  sendMessage: (text: string, sourceChunks?: string[]) => Promise<void>; // Send user msg + get AI response
   stopGeneration: () => Promise<void>;                          // Cancel active generation
   clearMessages: () => void;                                    // Delete all messages
 }
@@ -153,7 +153,7 @@ const useChatStore = create<ChatState>()(
        * This is async because the LLM call takes time (even the stub has a delay).
        * Error handling wraps the LLM call in try/catch.
        */
-      sendMessage: async (text: string) => {
+      sendMessage: async (text: string, sourceChunks?: string[]) => {
         /* Step 1: Add the user's message immediately (instant feedback) */
         get().addMessage(text, 'user'); // get() reads current state to call addMessage
 
@@ -178,7 +178,7 @@ const useChatStore = create<ChatState>()(
           modelManager.resetIsCancelled();
 
           /* Create and add an initial empty AI response message object to the list */
-          const emptyMessage = {
+          const emptyMessage: Message = {
             id: aiMessageId,
             text: '',
             sender: 'ai' as const,
@@ -189,13 +189,23 @@ const useChatStore = create<ChatState>()(
           }));
 
           /* Step 4: Call the LLM service with a streaming token callback */
-          await generateResponse(text, ({ token }) => {
+          const finalAnswer = await generateResponse(text, ({ token }) => {
             set(state => ({
               messages: state.messages.map(msg =>
                 msg.id === aiMessageId ? { ...msg, text: msg.text + token } : msg
               ),
             }));
           });
+
+          /* Step 5: If sourceChunks are provided, run the hallucination verifier */
+          if (sourceChunks && sourceChunks.length > 0) {
+            const verification = verifyAnswer(finalAnswer, sourceChunks);
+            set(state => ({
+              messages: state.messages.map(msg =>
+                msg.id === aiMessageId ? { ...msg, verification } : msg
+              ),
+            }));
+          }
         } catch (error) {
           /* Check if user manually cancelled the completion */
           if (modelManager.getIsCancelled()) {
