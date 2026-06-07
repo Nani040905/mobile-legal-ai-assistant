@@ -231,11 +231,11 @@ const runBenchmark = () => {
   console.log(`Chunk Precision (P@1)   : ${avgP1.toFixed(2)}%`);
   console.log('=========================================\n');
 
-  // List failing queries (Recall@5 = 0)
-  const failedQueries = results.filter(r => r.recall5 === 0);
+  // List failing queries (Rank > 1)
+  const failedQueries = results.filter(r => r.rank !== 1);
   if (failedQueries.length > 0) {
     console.log('================================================================');
-    console.log('                 RETRIEVAL FAILURE DETAILS (Recall@5 = 0)       ');
+    console.log('                 RETRIEVAL RANKING MISMATCHES (Rank > 1)        ');
     console.log('================================================================');
     for (const f of failedQueries) {
       console.log(`\n[ID: ${f.question.id}] [Doc: ${f.question.documentName}]`);

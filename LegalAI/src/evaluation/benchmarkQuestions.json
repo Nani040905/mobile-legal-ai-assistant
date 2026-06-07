@@ -348,5 +348,1405 @@
     "query": "Who are the witnesses to this power of attorney?",
     "expectedChunkIndex": 2,
     "expectedText": "Ashok Sen"
+  },
+  {
+    "id": "q51",
+    "documentName": "SoftwareLicenseAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "NovaCore Systems Ltd",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q52",
+    "documentName": "SoftwareLicenseAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "desktop license key installation of the NovaCore CAD designer tools suite",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q53",
+    "documentName": "SoftwareLicenseAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "one-time licensing charge of $15,000 per workstation key",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q54",
+    "documentName": "SoftwareLicenseAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "sixty (60) days advance notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q55",
+    "documentName": "SoftwareLicenseAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Texas",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q56",
+    "documentName": "PatentLicenseAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "BioGen Research Institute",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q57",
+    "documentName": "PatentLicenseAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "use of the patented high-speed chemical synthesis technology described in Patent US-99281",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q58",
+    "documentName": "PatentLicenseAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "running royalty fee of 3.5% of all net commercial product sales",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q59",
+    "documentName": "PatentLicenseAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "ninety (90) days notice of patent breach",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q60",
+    "documentName": "PatentLicenseAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Massachusetts",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q61",
+    "documentName": "TrademarkAssignment.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Legacy Brands Corp",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q62",
+    "documentName": "TrademarkAssignment.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "assignment of the registered logo trademark registration number TR-4429",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q63",
+    "documentName": "TrademarkAssignment.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "total purchase consideration of $75,000 paid at execution",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q64",
+    "documentName": "TrademarkAssignment.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "ten (10) days notice to register the transfer",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q65",
+    "documentName": "TrademarkAssignment.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of New York",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q66",
+    "documentName": "SaaSAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "CloudMetrics Inc",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q67",
+    "documentName": "SaaSAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "enterprise web access to the cloud analytics forecasting engines dashboard",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q68",
+    "documentName": "SaaSAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "monthly subscription of $1,800 due on the first day of each month",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q69",
+    "documentName": "SaaSAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days prior cancellation notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q70",
+    "documentName": "SaaSAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of California",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q71",
+    "documentName": "EULAAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "PixelPlay Games Ltd",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q72",
+    "documentName": "EULAAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "personal interactive non-commercial installation of the virtual multiplayer platform application",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q73",
+    "documentName": "EULAAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "in-app transaction tokens purchase options",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q74",
+    "documentName": "EULAAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "immediate termination notice for cheating",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q75",
+    "documentName": "EULAAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Washington",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q76",
+    "documentName": "WebsiteTermsOfService.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Global Forums Network",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q77",
+    "documentName": "WebsiteTermsOfService.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "temporary browser viewing and community post publishing rights on the forum web pages",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q78",
+    "documentName": "WebsiteTermsOfService.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "free site access funded by advertising banners",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q79",
+    "documentName": "WebsiteTermsOfService.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "discretionary immediate posting ban",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q80",
+    "documentName": "WebsiteTermsOfService.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Oregon",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q81",
+    "documentName": "PrivacyPolicy.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Safeguard Fintech",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q82",
+    "documentName": "PrivacyPolicy.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "collection, encryption, profiling, and sharing of consumer credit ratings and tracking cookies",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q83",
+    "documentName": "PrivacyPolicy.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "no fee policy for privacy statement disclosures",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q84",
+    "documentName": "PrivacyPolicy.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days notice of policy updates",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q85",
+    "documentName": "PrivacyPolicy.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Virginia",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q86",
+    "documentName": "DataProcessingAddendum.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "EuroCloud Storage",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q87",
+    "documentName": "DataProcessingAddendum.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "handling and secure cloud storage of European Union patient biometric details",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q88",
+    "documentName": "DataProcessingAddendum.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "included inside the master platform services fees schedule",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q89",
+    "documentName": "DataProcessingAddendum.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "forty-eight (48) hours data breach notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q90",
+    "documentName": "DataProcessingAddendum.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Federal Republic of Germany",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q91",
+    "documentName": "PartnershipDeed.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "David Miller (Partner A)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q92",
+    "documentName": "PartnershipDeed.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "joint operation and asset management of the downtown bakery outlet storefront business",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q93",
+    "documentName": "PartnershipDeed.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "equal fifty percent profit distribution split after tax deductions",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q94",
+    "documentName": "PartnershipDeed.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "ninety (90) days dissolution notice requirement",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q95",
+    "documentName": "PartnershipDeed.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Illinois",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q96",
+    "documentName": "ShareholdersAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Founders Syndicate Group",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q97",
+    "documentName": "ShareholdersAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "regulation of board seat selections and right of first refusal stock transfer restrictions",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q98",
+    "documentName": "ShareholdersAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "pro-rata dividend payouts based on class A common stock holdings",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q99",
+    "documentName": "ShareholdersAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "fifteen (15) days board meeting notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q100",
+    "documentName": "ShareholdersAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Delaware",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q101",
+    "documentName": "ArticlesOfAssociation.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Registrar of Joint Stock Companies",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q102",
+    "documentName": "ArticlesOfAssociation.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "internal governance rules for share allocation, director borrowing powers, and auditing audits",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q103",
+    "documentName": "ArticlesOfAssociation.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "authorized share capital of Rs. 10 Lakhs split into 1 Lakh shares",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q104",
+    "documentName": "ArticlesOfAssociation.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "twenty-one (21) days annual general meeting notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q105",
+    "documentName": "ArticlesOfAssociation.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Republic of India",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q106",
+    "documentName": "JointVentureAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Pacific Motors Japan",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q107",
+    "documentName": "JointVentureAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "joint establishment of an electric vehicle production facility in Chennai",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q108",
+    "documentName": "JointVentureAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "equity investment split of sixty-forty ratio by the joint venturers",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q109",
+    "documentName": "JointVentureAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "one hundred and eighty (180) days exit notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q110",
+    "documentName": "JointVentureAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "laws of Singapore",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q111",
+    "documentName": "AssetPurchaseAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Gourmet Foods Retailers",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q112",
+    "documentName": "AssetPurchaseAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "conveyance of kitchen machinery, ovens, supply contracts, and recipes list inventory",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q113",
+    "documentName": "AssetPurchaseAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "total purchase transaction cost of $350,000 paid via wire transfer",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q114",
+    "documentName": "AssetPurchaseAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "five (5) business days escrow release notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q115",
+    "documentName": "AssetPurchaseAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Ohio",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q116",
+    "documentName": "FranchiseAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Burger Palace Franchising Ltd",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q117",
+    "documentName": "FranchiseAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "operation of a standardized quick service restaurant and proprietary brand menu access",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q118",
+    "documentName": "FranchiseAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "ongoing royalty commission of 6% of weekly gross sales figures",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q119",
+    "documentName": "FranchiseAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days default remedy notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q120",
+    "documentName": "FranchiseAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Georgia",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q121",
+    "documentName": "ConsultingAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Vanguard Strategy Group",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q122",
+    "documentName": "ConsultingAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "supply of logistics optimization advice and executive training seminars",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q123",
+    "documentName": "ConsultingAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "day rate of $2,500 plus approved business travel costs",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q124",
+    "documentName": "ConsultingAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "fourteen (14) days early termination notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q125",
+    "documentName": "ConsultingAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of New Jersey",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q126",
+    "documentName": "SubcontractorAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Pinnacle Builders Corp",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q127",
+    "documentName": "SubcontractorAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "complete rewiring, cable layout, and lighting installation at Phase 2 Office Park Complex",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q128",
+    "documentName": "SubcontractorAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "total project fee of $120,000 payable upon milestones achievement",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q129",
+    "documentName": "SubcontractorAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "seven (7) days written cure notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q130",
+    "documentName": "SubcontractorAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Florida",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q131",
+    "documentName": "LoanAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Evergreen Savings Bank",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q132",
+    "documentName": "LoanAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "advance of five hundred thousand dollars principal loan amount",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q133",
+    "documentName": "LoanAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "fixed annual interest rate of 7.25% payable monthly",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q134",
+    "documentName": "LoanAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "three (3) days event of default notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q135",
+    "documentName": "LoanAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Colorado",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q136",
+    "documentName": "PromissoryNote.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Charles Henderson (Borrower)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q137",
+    "documentName": "PromissoryNote.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "written promise to pay thirty thousand dollars for school tuition fees",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q138",
+    "documentName": "PromissoryNote.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "accrued simple interest rate of 4% per year paid in full at maturity",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q139",
+    "documentName": "PromissoryNote.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "five (5) days default cure period",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q140",
+    "documentName": "PromissoryNote.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Utah",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q141",
+    "documentName": "MortgageDeed.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "First Mutual Lending LLC",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q142",
+    "documentName": "MortgageDeed.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "pledge of the real estate residential property located at 54 Oak Lane",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q143",
+    "documentName": "MortgageDeed.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "monthly principal and interest payment of $1,750",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q144",
+    "documentName": "MortgageDeed.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days acceleration and foreclosure notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q145",
+    "documentName": "MortgageDeed.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of North Carolina",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q146",
+    "documentName": "EscrowAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "SafeGuard Escrow Trust Ltd",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q147",
+    "documentName": "EscrowAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "holding and release of transaction funds pending software code delivery confirmation",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q148",
+    "documentName": "EscrowAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "flat escrow administration fee of $2,000 split between buyer and seller",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q149",
+    "documentName": "EscrowAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "five (5) days dispute filing window",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q150",
+    "documentName": "EscrowAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Nevada",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q151",
+    "documentName": "GuarantyAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Venture Capital Partners (Lender)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q152",
+    "documentName": "GuarantyAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "personal guarantee of all debt and payment obligations of Jenkins Tech Group",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q153",
+    "documentName": "GuarantyAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "unlimited secondary liability for all unpaid outstanding credit lines",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q154",
+    "documentName": "GuarantyAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "immediate written demand for payment",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q155",
+    "documentName": "GuarantyAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Michigan",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q156",
+    "documentName": "EquipmentLeaseAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "United Machinery Rental Corp",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q157",
+    "documentName": "EquipmentLeaseAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "lease and supply of three CAT-320 hydraulic excavator machines",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q158",
+    "documentName": "EquipmentLeaseAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "rental fee of $4,500 per machine per calendar month",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q159",
+    "documentName": "EquipmentLeaseAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "ten (10) days maintenance request notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q160",
+    "documentName": "EquipmentLeaseAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Arizona",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q161",
+    "documentName": "LegalNoticeBreach.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Advocate Anil Mishra on behalf of clients",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q162",
+    "documentName": "LegalNoticeBreach.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "demand to cure construction delays and hand over flat possession within 30 days",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q163",
+    "documentName": "LegalNoticeBreach.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "demand for refund of booking amount of Rs. 15 Lakhs with interest",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q164",
+    "documentName": "LegalNoticeBreach.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "fifteen (15) days statutory reply window",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q165",
+    "documentName": "LegalNoticeBreach.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Section 80 of the Code of Civil Procedure (CPC)",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q166",
+    "documentName": "WritPetition.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Resident Welfare Association Sector 5",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q167",
+    "documentName": "WritPetition.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "plea to issue Writ of Mandamus directing cleanup of illegal garbage dump yard",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q168",
+    "documentName": "WritPetition.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "nominal court fee of Rs. 250 paid at filing registry",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q169",
+    "documentName": "WritPetition.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "fourteen (14) days notice to opposite government parties",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q170",
+    "documentName": "WritPetition.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Article 226 of the Constitution of India",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q171",
+    "documentName": "BailApplication.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Sunil Gupta (Accused Applicant)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q172",
+    "documentName": "BailApplication.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "request for grant of regular bail in connection with FIR 054/2026",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q173",
+    "documentName": "BailApplication.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "personal surety bond of Rs. 50,000 with one local solvent surety",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q174",
+    "documentName": "BailApplication.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "three (3) days notice to the public prosecutor",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q175",
+    "documentName": "BailApplication.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Section 439 of the Code of Criminal Procedure",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q176",
+    "documentName": "InjunctionApplication.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Harish Mehta (Plaintiff Owner)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q177",
+    "documentName": "InjunctionApplication.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "plea to restrain defendant from constructing a wall on the agricultural boundary line",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q178",
+    "documentName": "InjunctionApplication.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "standard civil court fees paid as per the Court Fees Act",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q179",
+    "documentName": "InjunctionApplication.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "immediate ad-interim ex-parte hearing request",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q180",
+    "documentName": "InjunctionApplication.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Order 39 of the Code of Civil Procedure (CPC)",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q181",
+    "documentName": "PlaintCivilSuit.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Krishna Trading Agency (Plaintiff)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q182",
+    "documentName": "PlaintCivilSuit.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "recovery of Rs. 8,50,000 due for supply of raw cotton materials fabric",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q183",
+    "documentName": "PlaintCivilSuit.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "claim of Rs. 8.5 Lakhs principal plus 18% compound interest per annum",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q184",
+    "documentName": "PlaintCivilSuit.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days summons reply requirement",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q185",
+    "documentName": "PlaintCivilSuit.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Order 7 Rule 1 of the Code of Civil Procedure (CPC)",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q186",
+    "documentName": "WrittenStatementDefense.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Radhe Textiles Limited (Defendant)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q187",
+    "documentName": "WrittenStatementDefense.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "para-wise denial of plaint allegations and statement that goods delivered were defective",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q188",
+    "documentName": "WrittenStatementDefense.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "counter-claim for refund of shipping charges of Rs. 50,000",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q189",
+    "documentName": "WrittenStatementDefense.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days filing deadline extension requests",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q190",
+    "documentName": "WrittenStatementDefense.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Order 8 Rule 1 of the Code of Civil Procedure (CPC)",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q191",
+    "documentName": "GiftDeed.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Ramesh Chawla (Donor Father)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q192",
+    "documentName": "GiftDeed.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "unconditional transfer of residential house located at 12 Mall Road, Shimla",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q193",
+    "documentName": "GiftDeed.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "transfer made out of natural love and affection without cash consideration",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q194",
+    "documentName": "GiftDeed.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "immediate registration at sub-registrar office",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q195",
+    "documentName": "GiftDeed.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Section 122 of the Transfer of Property Act, 1882",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q196",
+    "documentName": "WillAndTestament.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Gopal Krishna Sen (Testator)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q197",
+    "documentName": "WillAndTestament.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "bequeathing of bank balance, gold ornaments, and ancestral land property",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q198",
+    "documentName": "WillAndTestament.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "no financial consideration applies to testamentary gifts",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q199",
+    "documentName": "WillAndTestament.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "no requirement of registration during lifetime",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q200",
+    "documentName": "WillAndTestament.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Indian Succession Act, 1925",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q201",
+    "documentName": "LeaseDeedCommercial.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "DLF CyberParks Limited (Lessor)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q202",
+    "documentName": "LeaseDeedCommercial.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "lease of 5,000 square feet office space in Tower B, DLF Cyber City, Gurgaon",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q203",
+    "documentName": "LeaseDeedCommercial.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "monthly rent of Rs. 4,50,000 with a mandatory 15% increase every three years",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q204",
+    "documentName": "LeaseDeedCommercial.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "ninety (90) days termination notice period",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q205",
+    "documentName": "LeaseDeedCommercial.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Transfer of Property Act, 1882",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q206",
+    "documentName": "PartitionDeed.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Devendra Sharma (Brother A)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q207",
+    "documentName": "PartitionDeed.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "division of undivided ancestral agricultural land measuring 10 acres in Rohtak",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q208",
+    "documentName": "PartitionDeed.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "equal partition into two plots of 5 acres each marked as Plot A and Plot B",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q209",
+    "documentName": "PartitionDeed.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "immediate mutation of land records registry",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q210",
+    "documentName": "PartitionDeed.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Hindu Succession Act, 1956",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q211",
+    "documentName": "SaleDeedProperty.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Karan Malhotra (Vendor Seller)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q212",
+    "documentName": "SaleDeedProperty.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "sale and transfer of plot number 456, Sector 15, Faridabad, Haryana",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q213",
+    "documentName": "SaleDeedProperty.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "total sale consideration of Rs. 55 Lakhs paid via bank demand draft",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q214",
+    "documentName": "SaleDeedProperty.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "immediate registration at registrar office within thirty days",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q215",
+    "documentName": "SaleDeedProperty.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Section 54 of the Transfer of Property Act, 1882",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q216",
+    "documentName": "IndemnityBond.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Suresh Chand (Indemnifier Shareholder)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q217",
+    "documentName": "IndemnityBond.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "indemnifying the company against losses from issuing duplicate certificates for 100 shares",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q218",
+    "documentName": "IndemnityBond.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "bond executed on Rs. 200 non-judicial stamp paper",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q219",
+    "documentName": "IndemnityBond.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "immediate notice of recovery of original certificates",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q220",
+    "documentName": "IndemnityBond.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Indian Contract Act, 1872",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q221",
+    "documentName": "EmploymentOfferLetter.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Trident Tech Labs Private Limited",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q222",
+    "documentName": "EmploymentOfferLetter.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "appointment as Lead Data Analyst based out of Bangalore office",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q223",
+    "documentName": "EmploymentOfferLetter.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "total annual Cost to Company package of Rs. 18,00,000",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q224",
+    "documentName": "EmploymentOfferLetter.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "three (3) months notice period or equivalent basic salary",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q225",
+    "documentName": "EmploymentOfferLetter.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Karnataka Shops and Commercial Establishments Act",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q226",
+    "documentName": "NonCompeteAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "CyberSecurity Solutions Inc",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q227",
+    "documentName": "NonCompeteAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "restriction from employment with competing cyber intelligence companies",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q228",
+    "documentName": "NonCompeteAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "special consideration fee of $10,000 paid upon departure",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q229",
+    "documentName": "NonCompeteAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days compliance review notice",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q230",
+    "documentName": "NonCompeteAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Virginia",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q231",
+    "documentName": "SeveranceAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Nexa Media Group LLC",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q232",
+    "documentName": "SeveranceAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "mutual separation of employment, waiver of claims, and return of company laptop",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q233",
+    "documentName": "SeveranceAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "lump sum severance package payment of $45,000 less tax withholdings",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q234",
+    "documentName": "SeveranceAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "twenty-one (21) days review and consideration period",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q235",
+    "documentName": "SeveranceAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of New York",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q236",
+    "documentName": "ArbitrationAgreement.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Omega FinServ Corp",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q237",
+    "documentName": "ArbitrationAgreement.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "resolution of all future financial disputes through binding private arbitration",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q238",
+    "documentName": "ArbitrationAgreement.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "arbitrator fees split equally between the contesting parties",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q239",
+    "documentName": "ArbitrationAgreement.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "thirty (30) days notice to initiate arbitration",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q240",
+    "documentName": "ArbitrationAgreement.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Federal Arbitration Act (FAA)",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q241",
+    "documentName": "MedicalMalpracticeComplaint.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Alice Higgins (Plaintiff patient)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q242",
+    "documentName": "MedicalMalpracticeComplaint.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "suit for failure to diagnose internal bleeding following abdominal surgery",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q243",
+    "documentName": "MedicalMalpracticeComplaint.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "demand for compensatory damages of $1.2 Million for medical costs",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q244",
+    "documentName": "MedicalMalpracticeComplaint.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "ninety (90) days intent to sue notice served",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q245",
+    "documentName": "MedicalMalpracticeComplaint.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "State of Florida",
+    "expectedChunkIndex": 2
+  },
+  {
+    "id": "q246",
+    "documentName": "InsuranceClaimAffidavit.txt",
+    "query": "What are the names of the First Party and Second Party in this agreement?",
+    "expectedText": "Harsimran Singh (Policyholder)",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q247",
+    "documentName": "InsuranceClaimAffidavit.txt",
+    "query": "What is the scope of work and core obligations under section 1 of this agreement?",
+    "expectedText": "statement of inventory lost during warehouse fire incident on April 15, 2026",
+    "expectedChunkIndex": 0
+  },
+  {
+    "id": "q248",
+    "documentName": "InsuranceClaimAffidavit.txt",
+    "query": "What are the consideration and payment terms under section 2 of this agreement?",
+    "expectedText": "claim value of Rs. 35,00,000 for destroyed cotton stocks",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q249",
+    "documentName": "InsuranceClaimAffidavit.txt",
+    "query": "What is the duration, termination notice, and contract term under section 3 of this agreement?",
+    "expectedText": "seven (7) days notice of fire incident served",
+    "expectedChunkIndex": 1
+  },
+  {
+    "id": "q250",
+    "documentName": "InsuranceClaimAffidavit.txt",
+    "query": "What is the governing law and court jurisdiction under section 4 of this agreement?",
+    "expectedText": "Insurance Act, 1938",
+    "expectedChunkIndex": 2
   }
 ]
