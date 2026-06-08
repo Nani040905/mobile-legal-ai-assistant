@@ -28,8 +28,8 @@ import { create } from 'zustand';
 /* Import persist middleware for automatic AsyncStorage persistence */
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-/* Import AsyncStorage — React Native's key-value storage */
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/* Import secureStorage — AES encrypted storage adapter */
+import { secureStorage } from '../services/secureStorage';
 
 /*
  * Document — TypeScript interface defining a single document's shape.
@@ -197,8 +197,8 @@ const useDocumentStore = create<DocumentState>()(
       /* AsyncStorage key for document data */
       name: 'legal-ai-document-storage',
 
-      /* Use AsyncStorage as the persistence backend */
-      storage: createJSONStorage(() => AsyncStorage),
+      /* Use secureStorage as the persistence backend */
+      storage: createJSONStorage(() => secureStorage),
 
       /* Persist only the documents array — actions are functions, not serializable */
       partialize: (state) => ({

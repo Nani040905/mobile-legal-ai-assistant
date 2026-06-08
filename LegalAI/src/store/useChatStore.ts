@@ -28,8 +28,8 @@ import { create } from 'zustand';
 /* Import the persist middleware — enables automatic state persistence */
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-/* Import AsyncStorage — the React Native key-value storage API */
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/* Import secureStorage — AES encrypted storage adapter */
+import { secureStorage } from '../services/secureStorage';
 
 import { generateResponse, isModelReady } from '../services/llmService';
 import modelManager from '../services/modelManager';
@@ -259,13 +259,8 @@ const useChatStore = create<ChatState>()(
       /* name — The AsyncStorage key under which the state is saved */
       name: 'legal-ai-chat-storage',
 
-      /*
-       * storage — The storage adapter to use.
-       * createJSONStorage(() => AsyncStorage) creates a Zustand-compatible
-       * wrapper around React Native's AsyncStorage.
-       * It handles JSON.stringify on write and JSON.parse on read.
-       */
-      storage: createJSONStorage(() => AsyncStorage),
+       /* Use secureStorage as the persistence backend */
+      storage: createJSONStorage(() => secureStorage),
 
       /*
        * partialize — Controls WHICH parts of the state are persisted.

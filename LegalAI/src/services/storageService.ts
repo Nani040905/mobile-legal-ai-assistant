@@ -20,6 +20,7 @@
 
 /* Import AsyncStorage — React Native's key-value storage API */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { secureStorage } from './secureStorage';
 
 /*
  * STORAGE_KEYS — Centralized key constants for all stored data.
@@ -35,24 +36,19 @@ export const STORAGE_KEYS = {
 };
 
 /*
- * saveData — Serializes and saves a value to AsyncStorage.
+ * saveData — Serializes and saves a value securely.
  *
  * @param key — The storage key (use STORAGE_KEYS constants).
  * @param value — Any serializable JavaScript value (object, array, string, number).
  * @returns A Promise that resolves when saving is complete.
- *
- * Flow:
- * 1. JSON.stringify converts the value to a string
- * 2. AsyncStorage.setItem saves the string under the given key
- * 3. If anything fails, we catch the error and log it (don't crash)
  */
 export const saveData = async <T>(key: string, value: T): Promise<void> => {
   try {
-    /* Convert the value to a JSON string — AsyncStorage only stores strings */
+    /* Convert the value to a JSON string */
     const jsonValue = JSON.stringify(value);
 
-    /* Save the string to AsyncStorage under the given key */
-    await AsyncStorage.setItem(key, jsonValue);
+    /* Save securely */
+    await secureStorage.setItem(key, jsonValue);
   } catch (error) {
     /* Log the error but don't crash — storage failures shouldn't break the app */
     console.error(`[StorageService] Error saving data for key "${key}":`, error);
@@ -60,32 +56,23 @@ export const saveData = async <T>(key: string, value: T): Promise<void> => {
 };
 
 /*
- * loadData — Reads and deserializes a value from AsyncStorage.
+ * loadData — Reads and decrypts a value securely.
  *
  * @param key — The storage key to read from.
  * @returns A Promise that resolves to the parsed value, or null if not found.
- *
- * The generic type parameter <T> lets callers specify what type they expect:
- *   const docs = await loadData<Document[]>('documents');
- *   // docs is typed as Document[] | null
- *
- * Flow:
- * 1. AsyncStorage.getItem reads the raw string
- * 2. If null (key doesn't exist), return null
- * 3. JSON.parse converts the string back to its original type
  */
 export const loadData = async <T>(key: string): Promise<T | null> => {
   try {
-    /* Read the raw JSON string from AsyncStorage */
-    const jsonValue = await AsyncStorage.getItem(key);
+    /* Read and decrypt the raw JSON string */
+    const jsonValue = await secureStorage.getItem(key);
 
-    /* If the key doesn't exist, getItem returns null — pass it through */
+    /* If the key doesn't exist, returns null */
     if (jsonValue === null) {
       return null; // No data stored for this key
     }
 
     /* Parse the JSON string back to its original JavaScript type */
-    return JSON.parse(jsonValue) as T; // Type assertion — we trust the stored data matches T
+    return JSON.parse(jsonValue) as T;
   } catch (error) {
     /* Log the error and return null — treat read failures as "no data" */
     console.error(`[StorageService] Error loading data for key "${key}":`, error);
@@ -94,17 +81,15 @@ export const loadData = async <T>(key: string): Promise<T | null> => {
 };
 
 /*
- * removeData — Deletes a value from AsyncStorage.
+ * removeData — Deletes a value securely.
  *
  * @param key — The storage key to delete.
  * @returns A Promise that resolves when deletion is complete.
- *
- * Used when clearing individual items (e.g., deleting a single document).
  */
 export const removeData = async (key: string): Promise<void> => {
   try {
-    /* Remove the key-value pair from AsyncStorage */
-    await AsyncStorage.removeItem(key);
+    /* Remove the key-value pair securely */
+    await secureStorage.removeItem(key);
   } catch (error) {
     console.error(`[StorageService] Error removing data for key "${key}":`, error);
   }
