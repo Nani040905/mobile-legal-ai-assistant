@@ -34,6 +34,7 @@ import DocumentsScreen from '../screens/DocumentsScreen';   // PDF upload and li
 import DocumentDetailsScreen from '../screens/DocumentDetailsScreen'; // Single doc actions
 import SettingsScreen from '../screens/SettingsScreen';     // App settings and model info
 import BenchmarkScreen from '../screens/BenchmarkScreen';   // Performance and recall benchmarks
+import DebugRetrievalScreen from '../screens/DebugRetrievalScreen'; // BM25 retrieval diagnostic utility
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -58,6 +59,7 @@ export type RootStackParamList = {
   };
   Settings: undefined;        // No params — settings are self-contained
   Benchmark: undefined;       // No params — benchmark dashboard
+  DebugRetrieval: undefined;  // No params — BM25 diagnostic screen
 };
 
 /*
@@ -132,6 +134,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="DocumentDetails" component={DocumentDetailsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Benchmark" component={BenchmarkScreen} />
+        <Stack.Screen name="DebugRetrieval" component={DebugRetrievalScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

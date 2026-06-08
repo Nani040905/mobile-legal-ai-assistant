@@ -490,6 +490,26 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
+        {/* ─── DEVELOPER TOOLS CARD (DEV BUILD ONLY) ─── */}
+        {__DEV__ && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardIcon}>🛠️</Text>
+              <Text style={styles.cardTitle}>Developer Tools</Text>
+            </View>
+            <Text style={styles.helperText}>
+              Diagnose BM25 search queries, check document chunks, and view exact relevance scores.
+            </Text>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => (navigation as any).navigate('DebugRetrieval')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.buttonText}>🔍 Open Debug Retrieval Screen</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* ─── ABOUT CARD ─── */}
         {/* App info and version */}
         <View style={styles.card}>
