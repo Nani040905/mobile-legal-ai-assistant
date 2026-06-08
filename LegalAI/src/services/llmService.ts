@@ -133,14 +133,14 @@ export const generateResponse = async (
         messages: [
           {
             role: 'system',  // System prompt sets the AI's behavior
-            content: 'You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, professional, and extremely concise responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Make your response as brief, compact, and dense as possible, avoiding unnecessary explanations or wordiness, to ensure the full answer fits and completes without truncation at the end. Always note that your responses are for informational purposes only and do not constitute legal advice.',
+            content: 'You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, concise, and professional responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Always note that your responses are for informational purposes only and do not constitute legal advice.',
           },
           {
             role: 'user',    // The actual user message
             content: prompt,
           },
         ],
-        n_predict: -1,        // Set to -1 to remove token limit and let model run to completion
+        n_predict: 1024,      // Maximum tokens to generate (keeps response time ~30-60s)
         stop: STOP_WORDS,    // Stop generating when any of these tokens appear
         temperature: 0.7,    // Moderate creativity — balanced for legal content
         top_p: 0.9,          // Nucleus sampling — consider top 90% probability mass
@@ -201,7 +201,7 @@ export const generateSummary = async (
    * This prevents large paragraphs/documents from blowing the context budget and being ignored.
    */
   const chunks = splitIntoChunks(documentText, 1000);
-  const systemPrompt = 'You are a legal document analyst specialized in Indian Law. Provide an extremely compact, concise, and dense plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses. Avoid any extra wordiness or fluff to ensure the response is as small as possible and completes fully without missing the end.';
+  const systemPrompt = 'You are a legal document analyst specialized in Indian Law. Provide a clear, detailed, and structured plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses.';
 
   const budgetResult = buildBudgetedContext(
     systemPrompt,
@@ -226,7 +226,7 @@ export const generateSummary = async (
             content: `Please summarize the following legal document:\n\n${budgetResult.contextText}`,
           },
         ],
-        n_predict: -1,        // Set to -1 to remove token limit and let model run to completion
+        n_predict: 2048,      // Increased prediction budget for detailed summaries
         stop: STOP_WORDS,
         temperature: 0.3,    // Low temperature — summaries should be factual, not creative
         top_p: 0.9,
@@ -283,7 +283,7 @@ export const answerQuestion = async (
    * while reserving 512 tokens for the output answer.
    */
   const contextChunks = contextText.split('\n\n---\n\n').filter(c => c.trim().length > 0);
-  const systemPrompt = 'You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document. Keep your answer extremely concise, compact, and brief, avoiding any unnecessary elaboration, to ensure the full answer completes without truncation.';
+  const systemPrompt = 'You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document.';
 
   const budgetResult = buildBudgetedContext(
     systemPrompt,
@@ -308,7 +308,7 @@ export const answerQuestion = async (
             content: `Document context:\n${budgetResult.contextText}\n\nQuestion: ${question}`,
           },
         ],
-        n_predict: -1,        // Set to -1 to remove token limit and let model run to completion
+        n_predict: 1024,      // Answers can be longer than summaries
         stop: STOP_WORDS,
         temperature: 0.3,    // Low temperature for factual accuracy
         top_p: 0.9,
