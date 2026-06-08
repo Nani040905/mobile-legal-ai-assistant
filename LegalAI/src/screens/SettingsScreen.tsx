@@ -472,6 +472,24 @@ const SettingsScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* ─── BENCHMARKS CARD ─── */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardIcon}>📊</Text>
+            <Text style={styles.cardTitle}>Performance Benchmarks</Text>
+          </View>
+          <Text style={styles.helperText}>
+            Verify local AI capabilities by running on-device benchmarks for load time, generation speed (tokens/sec), and search recall accuracy.
+          </Text>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => (navigation as any).navigate('Benchmark')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.buttonText}>📊 Run Performance Benchmarks</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ─── ABOUT CARD ─── */}
         {/* App info and version */}
         <View style={styles.card}>

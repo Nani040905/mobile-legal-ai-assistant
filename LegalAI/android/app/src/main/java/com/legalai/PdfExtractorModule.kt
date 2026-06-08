@@ -82,4 +82,33 @@ class PdfExtractorModule(reactContext: ReactApplicationContext) : ReactContextBa
             }
         }.start()
     }
+
+    /**
+     * getSystemMemoryInfo — Returns current JVM and Native Heap memory utilization.
+     */
+    @ReactMethod
+    fun getSystemMemoryInfo(promise: Promise) {
+        try {
+            val runtime = Runtime.getRuntime()
+            val totalMemory = runtime.totalMemory()
+            val freeMemory = runtime.freeMemory()
+            val maxMemory = runtime.maxMemory()
+            
+            val nativeAllocated = android.os.Debug.getNativeHeapAllocatedSize()
+            val nativeFree = android.os.Debug.getNativeHeapFreeSize()
+            val nativeSize = android.os.Debug.getNativeHeapSize()
+
+            val map = com.facebook.react.bridge.Arguments.createMap()
+            map.putDouble("javaTotal", totalMemory.toDouble())
+            map.putDouble("javaFree", freeMemory.toDouble())
+            map.putDouble("javaMax", maxMemory.toDouble())
+            map.putDouble("nativeAllocated", nativeAllocated.toDouble())
+            map.putDouble("nativeFree", nativeFree.toDouble())
+            map.putDouble("nativeSize", nativeSize.toDouble())
+
+            promise.resolve(map)
+        } catch (e: Exception) {
+            promise.reject("MEMORY_ERROR", "Failed to get memory info: ${e.message}", e)
+        }
+    }
 }

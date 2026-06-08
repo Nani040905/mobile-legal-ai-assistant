@@ -140,7 +140,7 @@ export const generateResponse = async (
             content: prompt,
           },
         ],
-        n_predict: 512,      // Maximum tokens to generate (keeps response time ~30-60s)
+        n_predict: 1024,      // Maximum tokens to generate (keeps response time ~30-60s)
         stop: STOP_WORDS,    // Stop generating when any of these tokens appear
         temperature: 0.7,    // Moderate creativity — balanced for legal content
         top_p: 0.9,          // Nucleus sampling — consider top 90% probability mass
@@ -226,7 +226,7 @@ export const generateSummary = async (
             content: `Please summarize the following legal document:\n\n${budgetResult.contextText}`,
           },
         ],
-        n_predict: 768,      // Increased prediction budget for detailed summaries
+        n_predict: 2048,      // Increased prediction budget for detailed summaries
         stop: STOP_WORDS,
         temperature: 0.3,    // Low temperature — summaries should be factual, not creative
         top_p: 0.9,
@@ -308,7 +308,7 @@ export const answerQuestion = async (
             content: `Document context:\n${budgetResult.contextText}\n\nQuestion: ${question}`,
           },
         ],
-        n_predict: 512,      // Answers can be longer than summaries
+        n_predict: 1024,      // Answers can be longer than summaries
         stop: STOP_WORDS,
         temperature: 0.3,    // Low temperature for factual accuracy
         top_p: 0.9,

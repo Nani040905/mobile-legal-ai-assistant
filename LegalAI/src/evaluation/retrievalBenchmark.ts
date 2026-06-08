@@ -1,30 +1,51 @@
 /*
  * retrievalBenchmark.ts — Benchmark suite for the BM25 retrieval engine.
  *
- * PURPOSE: Measures the accuracy and recall of our local search engine
- * using a set of 10 legal documents and 50 target questions (ground truth).
+ * PURPOSE: Measures the accuracy, recall, latency, and memory of our local search engine
+ * using a set of 50 legal documents and 50 target questions (ground truth).
  *
  * METRICS MEASURED:
  * 1. Recall@5: Proportion of queries where the correct chunk is in the top 5 results.
  * 2. Recall@10: Proportion of queries where the correct chunk is in the top 10 results.
  * 3. MRR (Mean Reciprocal Rank): Measures rank position quality of the first correct chunk.
  * 4. Chunk Precision (P@1): Proportion of queries where the top-1 retrieved result is correct.
- *
- * RUNNING THE BENCHMARK:
- *   npx ts-node src/evaluation/retrievalBenchmark.ts
+ * 5. Latency: Average search latency in milliseconds.
+ * 6. Memory: Heap memory usage during search processing.
  */
 
-import fs from 'fs';
-import path from 'path';
 import { search } from '../services/retrievalService';
+import { BENCHMARK_DOCUMENTS } from './benchmarkDocumentsData';
+import benchmarkQuestions from './benchmarkQuestions.json';
 
 // Interfaces for our benchmark questions
-interface BenchmarkQuestion {
+export interface BenchmarkQuestion {
   id: string;
   documentName: string;
   query: string;
   expectedChunkIndex: number;
   expectedText: string;
+}
+
+export interface RetrievalBenchmarkResult {
+  totalQueries: number;
+  recall5: number;
+  recall10: number;
+  mrr: number;
+  precision: number;
+  avgLatencyMs: number;
+  peakMemoryMb: number;
+  failingQueries: Array<{
+    id: string;
+    documentName: string;
+    query: string;
+    rank: number;
+    expectedText: string;
+    topRetrieved: Array<{
+      index: number;
+      score: number;
+      textPreview: string;
+    }>;
+  }>;
 }
 
 // Chunker function matching pdfService.ts splitIntoChunks algorithm
@@ -64,71 +85,62 @@ const splitIntoChunks = (text: string, chunkSize: number = 1000): string[] => {
   return chunks;
 };
 
-// Main benchmark runner
-const runBenchmark = () => {
-  console.log('================================================================');
-  console.log('         LEGAL AI ASSISTANT RETRIEVAL QUALITY BENCHMARK        ');
-  console.log('================================================================\n');
-
-  const docsDir = path.join(__dirname, 'benchmarkDocuments');
-  const questionsPath = path.join(__dirname, 'benchmarkQuestions.json');
-
-  // Load questions
-  if (!fs.existsSync(questionsPath)) {
-    console.error(`Error: Questions file not found at ${questionsPath}`);
-    process.exit(1);
+// Safe memory reader that works in both Node CLI and React Native
+const getMemoryBytes = async (): Promise<number> => {
+  if (typeof process !== 'undefined' && process.memoryUsage) {
+    return process.memoryUsage().heapUsed;
   }
+  try {
+    // Dynamically require to avoid bundling react-native in CLI Node environment
+    const { NativeModules } = require('react-native');
+    const { PdfExtractor } = NativeModules;
+    if (PdfExtractor && PdfExtractor.getSystemMemoryInfo) {
+      const memInfo = await PdfExtractor.getSystemMemoryInfo();
+      return memInfo.nativeAllocated;
+    }
+  } catch (e) {
+    // React Native fallback if native module fails
+  }
+  return 0;
+};
 
-  const questions: BenchmarkQuestion[] = JSON.parse(
-    fs.readFileSync(questionsPath, 'utf8')
-  );
+/**
+ * runFullBenchmark — Main orchestrator executing retrieval verification.
+ */
+export const runFullBenchmark = async (): Promise<RetrievalBenchmarkResult> => {
+  const startMemory = await getMemoryBytes();
+  const startTimeTotal = Date.now();
 
-  console.log(`Loaded ${questions.length} benchmark questions.`);
-
-  // Load and cache documents
+  const questions: BenchmarkQuestion[] = benchmarkQuestions;
   const docCache = new Map<string, string[]>();
   const documentsList = Array.from(new Set(questions.map(q => q.documentName)));
 
-  console.log(`Loading and chunking ${documentsList.length} legal documents...\n`);
-
+  // Load and chunk documents from static memory
   for (const docName of documentsList) {
-    const docPath = path.join(docsDir, docName);
-    if (!fs.existsSync(docPath)) {
-      console.error(`Error: Document file not found at ${docPath}`);
-      process.exit(1);
-    }
-    const rawText = fs.readFileSync(docPath, 'utf8');
+    const rawText = BENCHMARK_DOCUMENTS[docName] || '';
     const chunks = splitIntoChunks(rawText);
     docCache.set(docName, chunks);
-    console.log(`- ${docName}: Chunked into ${chunks.length} segments`);
   }
 
-  console.log('\nRunning retrieval queries...');
+  let totalQueries = 0;
+  let hitsAt1 = 0;
+  let hitsAt5 = 0;
+  let hitsAt10 = 0;
+  let sumRR = 0;
+  let totalSearchDurationMs = 0;
 
-  const results: {
-    question: BenchmarkQuestion;
-    rank: number; // 1-indexed rank, -1 if not found
-    recall5: number;
-    recall10: number;
-    reciprocalRank: number;
-    p1: number;
-    retrievedChunks: any[];
-  }[] = [];
-
-  // Group metrics by document
-  const docMetrics = new Map<string, {
-    total: number;
-    hitsAt1: number;
-    hitsAt5: number;
-    hitsAt10: number;
-    sumReciprocalRank: number;
-  }>();
+  const failingQueriesList: RetrievalBenchmarkResult['failingQueries'] = [];
 
   for (const q of questions) {
     const chunks = docCache.get(q.documentName) || [];
     
-    // Search top-10 chunks using our BM25 engine
+    // Measure latency for this search call
+    const startSearch = Date.now();
     const searchResults = search(q.query, chunks, 10);
+    const searchDuration = Date.now() - startSearch;
+    
+    totalSearchDurationMs += searchDuration;
+    totalQueries++;
 
     // Find rank of correct chunk
     let rank = -1;
@@ -143,118 +155,77 @@ const runBenchmark = () => {
       }
     }
 
-    const recall5 = (rank > 0 && rank <= 5) ? 1 : 0;
-    const recall10 = (rank > 0 && rank <= 10) ? 1 : 0;
     const reciprocalRank = rank > 0 ? 1 / rank : 0;
-    const p1 = (rank === 1) ? 1 : 0;
+    if (rank === 1) hitsAt1++;
+    if (rank > 0 && rank <= 5) hitsAt5++;
+    if (rank > 0 && rank <= 10) hitsAt10++;
+    sumRR += reciprocalRank;
 
-    results.push({
-      question: q,
-      rank,
-      recall5,
-      recall10,
-      reciprocalRank,
-      p1,
-      retrievedChunks: searchResults
-    });
-
-    // Update document metrics
-    if (!docMetrics.has(q.documentName)) {
-      docMetrics.set(q.documentName, {
-        total: 0,
-        hitsAt1: 0,
-        hitsAt5: 0,
-        hitsAt10: 0,
-        sumReciprocalRank: 0
+    // Track ranking mismatches (Rank > 1 or Not Found)
+    if (rank !== 1) {
+      failingQueriesList.push({
+        id: q.id,
+        documentName: q.documentName,
+        query: q.query,
+        rank,
+        expectedText: q.expectedText,
+        topRetrieved: searchResults.slice(0, 3).map(r => ({
+          index: r.index,
+          score: r.score,
+          textPreview: r.chunk.substring(0, 80).replace(/\n/g, ' ') + '...'
+        }))
       });
     }
-    const stats = docMetrics.get(q.documentName)!;
-    stats.total++;
-    if (rank === 1) stats.hitsAt1++;
-    if (rank > 0 && rank <= 5) stats.hitsAt5++;
-    if (rank > 0 && rank <= 10) stats.hitsAt10++;
-    stats.sumReciprocalRank += reciprocalRank;
   }
 
-  // Print Per-Document Results Table
-  console.log('\n===========================================================================================');
-  console.log('                               PER-DOCUMENT RETRIEVAL METRICS                               ');
-  console.log('===========================================================================================');
-  console.log(
-    `${'Document Name'.padEnd(30)} | ${'Queries Run'.padEnd(12)} | ${'Recall@5'.padEnd(10)} | ${'Recall@10'.padEnd(10)} | ${'MRR'.padEnd(10)} | ${'P@1 (Acc)'}`
-  );
-  console.log('-------------------------------------------------------------------------------------------');
+  const endMemory = await getMemoryBytes();
+  const peakMemoryBytes = Math.max(0, endMemory - startMemory);
+  const peakMemoryMb = Number((peakMemoryBytes / (1024 * 1024)).toFixed(2));
+  const avgLatencyMs = Number((totalSearchDurationMs / totalQueries).toFixed(2));
 
-  let totalQueries = 0;
-  let totalHitsAt1 = 0;
-  let totalHitsAt5 = 0;
-  let totalHitsAt10 = 0;
-  let totalSumRR = 0;
+  const recall5 = Number(((hitsAt5 / totalQueries) * 100).toFixed(2));
+  const recall10 = Number(((hitsAt10 / totalQueries) * 100).toFixed(2));
+  const mrr = Number((sumRR / totalQueries).toFixed(3));
+  const precision = Number(((hitsAt1 / totalQueries) * 100).toFixed(2));
 
-  for (const [docName, stats] of docMetrics.entries()) {
-    const recall5 = (stats.hitsAt5 / stats.total) * 100;
-    const recall10 = (stats.hitsAt10 / stats.total) * 100;
-    const mrr = stats.sumReciprocalRank / stats.total;
-    const p1 = (stats.hitsAt1 / stats.total) * 100;
-
-    totalQueries += stats.total;
-    totalHitsAt1 += stats.hitsAt1;
-    totalHitsAt5 += stats.hitsAt5;
-    totalHitsAt10 += stats.hitsAt10;
-    totalSumRR += stats.sumReciprocalRank;
-
-    const docDisplayName = docName.replace('.txt', '').padEnd(30);
-    const queriesRun = stats.total.toString().padEnd(12);
-    const r5 = `${recall5.toFixed(1)}%`.padEnd(10);
-    const r10 = `${recall10.toFixed(1)}%`.padEnd(10);
-    const m = mrr.toFixed(3).padEnd(10);
-    const p = `${p1.toFixed(1)}%`;
-
-    console.log(`${docDisplayName} | ${queriesRun} | ${r5} | ${r10} | ${m} | ${p}`);
-  }
-
-  console.log('===========================================================================================');
-
-  // Compute overall summary metrics
-  const avgRecall5 = (totalHitsAt5 / totalQueries) * 100;
-  const avgRecall10 = (totalHitsAt10 / totalQueries) * 100;
-  const overallMRR = totalSumRR / totalQueries;
-  const avgP1 = (totalHitsAt1 / totalQueries) * 100;
-
-  console.log('\n=========================================');
-  console.log('           OVERALL SYSTEM SUMMARY        ');
-  console.log('=========================================');
-  console.log(`Total Queries Evaluated : ${totalQueries}`);
-  console.log(`Average Recall@5        : ${avgRecall5.toFixed(2)}%`);
-  console.log(`Average Recall@10       : ${avgRecall10.toFixed(2)}%`);
-  console.log(`Mean Reciprocal Rank    : ${overallMRR.toFixed(3)}`);
-  console.log(`Chunk Precision (P@1)   : ${avgP1.toFixed(2)}%`);
-  console.log('=========================================\n');
-
-  // List failing queries (Rank > 1)
-  const failedQueries = results.filter(r => r.rank !== 1);
-  if (failedQueries.length > 0) {
-    console.log('================================================================');
-    console.log('                 RETRIEVAL RANKING MISMATCHES (Rank > 1)        ');
-    console.log('================================================================');
-    for (const f of failedQueries) {
-      console.log(`\n[ID: ${f.question.id}] [Doc: ${f.question.documentName}]`);
-      console.log(`Query    : "${f.question.query}"`);
-      console.log(`Expected : Chunk #${f.question.expectedChunkIndex + 1} (containing "${f.question.expectedText}")`);
-      if (f.rank === -1) {
-        console.log('Retrieved: None of the top 10 chunks matched expected criteria.');
-      } else {
-        console.log(`Retrieved: Matched at rank #${f.rank}`);
-      }
-      console.log('Top Chunks Retrieved:');
-      f.retrievedChunks.slice(0, 3).forEach((rc, idx) => {
-        console.log(`  Rank ${idx + 1} [Chunk ${rc.index + 1}] (Score: ${rc.score.toFixed(2)}): "${rc.chunk.substring(0, 80).replace(/\n/g, ' ')}..."`);
-      });
-    }
-    console.log('================================================================\n');
-  } else {
-    console.log('🎉 Outstanding! All queries resolved inside the top 5 search results!');
-  }
+  return {
+    totalQueries,
+    recall5,
+    recall10,
+    mrr,
+    precision,
+    avgLatencyMs,
+    peakMemoryMb,
+    failingQueries: failingQueriesList
+  };
 };
 
-runBenchmark();
+// Auto-run if executed directly via node or ts-node command line
+if (typeof require !== 'undefined' && require.main === module) {
+  (async () => {
+    console.log('================================================================');
+    console.log('         LEGAL AI ASSISTANT RETRIEVAL QUALITY BENCHMARK        ');
+    console.log('================================================================\n');
+
+    console.log('Running benchmark...');
+    const result = await runFullBenchmark();
+
+    console.log('=========================================');
+    console.log('           OVERALL SYSTEM SUMMARY        ');
+    console.log('=========================================');
+    console.log(`Total Queries Evaluated : ${result.totalQueries}`);
+    console.log(`Average Recall@5        : ${result.recall5}%`);
+    console.log(`Average Recall@10       : ${result.recall10}%`);
+    console.log(`Mean Reciprocal Rank    : ${result.mrr}`);
+    console.log(`Chunk Precision (P@1)   : ${result.precision}%`);
+    console.log(`Average Latency         : ${result.avgLatencyMs} ms`);
+    console.log(`Benchmark Memory Delta  : ${result.peakMemoryMb} MB`);
+    console.log('=========================================\n');
+
+    if (result.failingQueries.length > 0) {
+      console.log(`Found ${result.failingQueries.length} query ranking mismatches.`);
+    } else {
+      console.log('🎉 Outstanding! All queries resolved inside rank 1!');
+    }
+  })();
+}

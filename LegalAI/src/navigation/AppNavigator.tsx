@@ -33,6 +33,7 @@ import ChatScreen from '../screens/ChatScreen';             // AI chat interface
 import DocumentsScreen from '../screens/DocumentsScreen';   // PDF upload and list
 import DocumentDetailsScreen from '../screens/DocumentDetailsScreen'; // Single doc actions
 import SettingsScreen from '../screens/SettingsScreen';     // App settings and model info
+import BenchmarkScreen from '../screens/BenchmarkScreen';   // Performance and recall benchmarks
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -56,6 +57,7 @@ export type RootStackParamList = {
     docName: string;          // Display name shown in the header
   };
   Settings: undefined;        // No params — settings are self-contained
+  Benchmark: undefined;       // No params — benchmark dashboard
 };
 
 /*
@@ -129,6 +131,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Documents" component={DocumentsScreen} />
         <Stack.Screen name="DocumentDetails" component={DocumentDetailsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Benchmark" component={BenchmarkScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
