@@ -31,8 +31,12 @@ import {
   runFullBenchmark,
   RetrievalBenchmarkResult,
 } from '../evaluation/retrievalBenchmark';
+import {
+  runModelComparison,
+  ModelComparisonResult,
+} from '../evaluation/modelComparison';
 
-type Tab = 'performance' | 'retrieval';
+type Tab = 'performance' | 'retrieval' | 'comparison';
 
 const BenchmarkScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -43,6 +47,11 @@ const BenchmarkScreen: React.FC = () => {
   // Performance benchmark state
   const [isRunningLoadTest, setIsRunningLoadTest] = useState(false);
   const [isRunningSpeedTest, setIsRunningSpeedTest] = useState(false);
+  
+  // Model Comparison state
+  const [isRunningComparison, setIsRunningComparison] = useState(false);
+  const [comparisonResults, setComparisonResults] = useState<ModelComparisonResult[]>([]);
+  const [comparisonProgressText, setComparisonProgressText] = useState('');
   const [loadTimeMs, setLoadTimeMs] = useState<number | null>(null);
   const [speedMetrics, setSpeedMetrics] = useState<InferenceMetrics | null>(null);
   const [currentSpeedText, setCurrentSpeedText] = useState('');
@@ -137,6 +146,31 @@ const BenchmarkScreen: React.FC = () => {
     }
   };
 
+  const handleRunComparison = async () => {
+    try {
+      setIsRunningComparison(true);
+      setComparisonResults([]);
+      setComparisonProgressText('Starting comparison...');
+
+      const modelIds = ['qwen-2.5-3b', 'qwen-2.5-1.5b', 'llama-3.2-1b'];
+      const results = await runModelComparison(modelIds, (text) => {
+        setComparisonProgressText(text);
+      });
+
+      setComparisonResults(results);
+      setModelStatus(modelManager.getStatus());
+      setActiveModel(modelManager.getActiveModel());
+
+      Alert.alert('Model Comparison Complete', 'Successfully ran benchmarks across downloaded models.');
+    } catch (error: any) {
+      console.error('[BenchmarkScreen] Comparison test failed:', error);
+      Alert.alert('Test Failed', error.message || 'Unknown model comparison benchmark error.');
+    } finally {
+      setIsRunningComparison(false);
+      setComparisonProgressText('');
+    }
+  };
+
   const formatBytes = (bytes: number | null): string => {
     if (bytes === null || bytes === 0) return 'N/A';
     const mb = bytes / (1024 * 1024);
@@ -173,10 +207,18 @@ const BenchmarkScreen: React.FC = () => {
             🔍 Search Recall
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'comparison' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('comparison')}
+        >
+          <Text style={[styles.tabText, activeTab === 'comparison' && styles.tabTextActive]}>
+            📊 Compare Models
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {activeTab === 'performance' ? (
+        {activeTab === 'performance' && (
           // ─── PERFORMANCE TAB ───
           <View>
             {/* Active Model Status Card */}
@@ -273,7 +315,9 @@ const BenchmarkScreen: React.FC = () => {
               )}
             </View>
           </View>
-        ) : (
+        )}
+
+        {activeTab === 'retrieval' && (
           // ─── RETRIEVAL TAB ───
           <View>
             <View style={styles.card}>
@@ -341,6 +385,85 @@ const BenchmarkScreen: React.FC = () => {
                   <ActivityIndicator size="small" color={COLORS.textPrimary} />
                 ) : (
                   <Text style={styles.buttonText}>🔍 Run Retrieval Benchmark</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {activeTab === 'comparison' && (
+          <View>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Offline LLM Model Comparison</Text>
+              <Text style={styles.helperText}>
+                Compares reasoning capabilities, file sizes, memory utilization, and response speeds of Qwen 3B, Qwen 1.5B, and Llama 1B local models.
+              </Text>
+
+              {comparisonResults.length > 0 && (
+                <View style={styles.tableContainer}>
+                  {/* Table Header */}
+                  <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                    <Text style={[styles.tableColHeader, { flex: 2, textAlign: 'left' }]}>Model</Text>
+                    <Text style={styles.tableColHeader}>Load</Text>
+                    <Text style={styles.tableColHeader}>Tok/s</Text>
+                    <Text style={styles.tableColHeader}>RAM</Text>
+                    <Text style={styles.tableColHeader}>Halluc</Text>
+                    <Text style={styles.tableColHeader}>Acc</Text>
+                  </View>
+                  {/* Table Body */}
+                  {comparisonResults.map((res) => (
+                    <View key={res.modelId} style={styles.tableRow}>
+                      <Text style={[styles.tableCellName, { flex: 2 }]}>
+                        {res.modelId === 'qwen-2.5-3b' ? 'Qwen 3B' : res.modelId === 'qwen-2.5-1.5b' ? 'Qwen 1.5B' : 'Llama 1B'}
+                      </Text>
+                      {res.downloaded ? (
+                        <>
+                          <Text style={styles.tableCell}>
+                            {res.loadTimeMs !== null ? `${(res.loadTimeMs / 1000).toFixed(1)}s` : 'N/A'}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            {res.tokensPerSecond !== null ? `${res.tokensPerSecond}` : 'N/A'}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            {res.peakRamMb !== null ? `${res.peakRamMb}MB` : 'N/A'}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            {res.hallucinationScore !== null ? `${res.hallucinationScore}%` : 'N/A'}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            {res.accuracyScore !== null ? `${res.accuracyScore}%` : 'N/A'}
+                          </Text>
+                        </>
+                      ) : (
+                        <Text style={[styles.tableCell, { flex: 5, color: COLORS.warning, fontWeight: 'bold' }]}>
+                          Not Downloaded
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {isRunningComparison && (
+                <View style={styles.progressOverlay}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.progressOverlayText}>{comparisonProgressText}</Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  (isRunningComparison || isRunningLoadTest || isRunningSpeedTest || isRunningRetrievalTest) &&
+                    styles.disabledButton,
+                ]}
+                onPress={handleRunComparison}
+                disabled={isRunningComparison || isRunningLoadTest || isRunningSpeedTest || isRunningRetrievalTest}
+              >
+                {isRunningComparison ? (
+                  <ActivityIndicator size="small" color={COLORS.textPrimary} />
+                ) : (
+                  <Text style={styles.buttonText}>📊 Run Model Comparison</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -550,6 +673,59 @@ const styles = StyleSheet.create({
     fontSize: FONTS.caption,
     fontWeight: FONTS.weightRegular,
     color: COLORS.textSecondary,
+    marginTop: SPACING.sm,
+    textAlign: 'center',
+  },
+  tableContainer: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    marginTop: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  tableHeaderRow: {
+    backgroundColor: COLORS.surfaceVariant,
+  },
+  tableColHeader: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.primary,
+    textAlign: 'center',
+  },
+  tableCellName: {
+    fontSize: 13,
+    fontWeight: FONTS.weightSemiBold,
+    color: COLORS.textPrimary,
+  },
+  tableCell: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  progressOverlay: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginVertical: SPACING.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  progressOverlayText: {
+    color: COLORS.textPrimary,
+    fontSize: FONTS.caption,
     marginTop: SPACING.sm,
     textAlign: 'center',
   },

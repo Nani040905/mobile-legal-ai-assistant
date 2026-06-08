@@ -100,6 +100,7 @@ export const getModelStatus = (): string => {
 export const generateResponse = async (
   prompt: string,                  // The user's message text
   onToken?: StreamCallback,        // Optional: called for each generated token
+  history?: { role: 'user' | 'assistant'; content: string }[],
 ): Promise<string> => {
   /* Get the active llama.rn context from the model manager */
   const context = modelManager.getContext();
@@ -113,6 +114,28 @@ export const generateResponse = async (
 
   try {
     modelManager.setGenerating(true);
+
+    const chatMLMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      {
+        role: 'system',
+        content: 'You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, concise, and professional responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Always note that your responses are for informational purposes only and do not constitute legal advice. Make your response as small and concise as possible, ensuring that no important or unimportant details are omitted from the end.',
+      },
+    ];
+
+    if (history && history.length > 0) {
+      for (const h of history) {
+        chatMLMessages.push({
+          role: h.role,
+          content: h.content,
+        });
+      }
+    }
+
+    chatMLMessages.push({
+      role: 'user' as const,
+      content: prompt,
+    });
+
     /*
      * context.completion() — The core inference function from llama.rn.
      *
@@ -130,16 +153,7 @@ export const generateResponse = async (
      */
     const result = await context.completion(
       {
-        messages: [
-          {
-            role: 'system',  // System prompt sets the AI's behavior
-            content: 'You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, concise, and professional responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Always note that your responses are for informational purposes only and do not constitute legal advice. Make your response as small and concise as possible, ensuring that no important or unimportant details are omitted from the end.',
-          },
-          {
-            role: 'user',    // The actual user message
-            content: prompt,
-          },
-        ],
+        messages: chatMLMessages,
         n_predict: -1,      // Remove prediction limit (generate until EOS)
         stop: STOP_WORDS,    // Stop generating when any of these tokens appear
         temperature: 0.7,    // Moderate creativity — balanced for legal content

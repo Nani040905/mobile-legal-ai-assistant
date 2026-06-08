@@ -190,14 +190,27 @@ const useChatStore = create<ChatState>()(
             messages: [...state.messages, emptyMessage],
           }));
 
-          /* Step 4: Call the LLM service with a streaming token callback */
-          const finalAnswer = await generateResponse(text, ({ token }) => {
-            set(state => ({
-              messages: state.messages.map(msg =>
-                msg.id === aiMessageId ? { ...msg, text: msg.text + token } : msg
-              ),
-            }));
-          });
+          // Retrieve last 5 exchanges (10 messages) of conversation history to pass as memory
+          const allPrevMessages = get().messages.slice(0, -2);
+          const validPrevMessages = allPrevMessages.filter(m => m.text.trim().length > 0);
+          const historyMessages = validPrevMessages.slice(-10);
+          const history = historyMessages.map(m => ({
+            role: m.sender === 'ai' ? ('assistant' as const) : ('user' as const),
+            content: m.text,
+          }));
+
+          /* Step 4: Call the LLM service with history and a streaming token callback */
+          const finalAnswer = await generateResponse(
+            text,
+            ({ token }) => {
+              set(state => ({
+                messages: state.messages.map(msg =>
+                  msg.id === aiMessageId ? { ...msg, text: msg.text + token } : msg
+                ),
+              }));
+            },
+            history
+          );
 
           /* Step 5: If sourceChunks are provided, run the hallucination verifier and attach citations */
           if (sourceChunks && sourceChunks.length > 0) {
