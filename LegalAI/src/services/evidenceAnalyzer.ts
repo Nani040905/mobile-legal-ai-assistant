@@ -55,6 +55,7 @@ Respond ONLY in this JSON format:
 Return empty arrays if no evidence is mentioned. Keep descriptions under 50 words.`;
 
   try {
+    await context.clearCache();
     const result = await context.completion({
       messages: [
         { role: 'system', content: 'You are a legal evidence analyst. Respond ONLY with valid JSON. No extra text.' },
@@ -69,25 +70,33 @@ Return empty arrays if no evidence is mentioned. Keep descriptions under 50 word
 
     const text = result.text.trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return { strong: [], weak: [], missing: [] };
+    if (!jsonMatch) {
+      console.warn(`[EvidenceAnalyzer] No JSON block found in raw output for chunk ${chunkIndex}. Raw:`, text);
+      return { strong: [], weak: [], missing: [] };
+    }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
 
-    const strong: EvidenceItem[] = (parsed.strong || []).map((item: any) => ({
-      chunkIndex,
-      item: item.item || '',
-      reference: item.reference || '',
-    }));
-    const weak: EvidenceItem[] = (parsed.weak || []).map((item: any) => ({
-      chunkIndex,
-      item: item.item || '',
-      reference: item.reference || '',
-    }));
-    const missing: string[] = (parsed.missing || []).filter((s: any) => typeof s === 'string');
+      const strong: EvidenceItem[] = (parsed.strong || []).map((item: any) => ({
+        chunkIndex,
+        item: item.item || '',
+        reference: item.reference || '',
+      }));
+      const weak: EvidenceItem[] = (parsed.weak || []).map((item: any) => ({
+        chunkIndex,
+        item: item.item || '',
+        reference: item.reference || '',
+      }));
+      const missing: string[] = (parsed.missing || []).filter((s: any) => typeof s === 'string');
 
-    return { strong, weak, missing };
+      return { strong, weak, missing };
+    } catch (parseErr) {
+      console.warn(`[EvidenceAnalyzer] JSON parse error on chunk ${chunkIndex}. Raw JSON matched substring:`, jsonMatch[0], parseErr);
+      return { strong: [], weak: [], missing: [] };
+    }
   } catch (e) {
-    console.warn(`[EvidenceAnalyzer] Failed to parse chunk ${chunkIndex}:`, e);
+    console.warn(`[EvidenceAnalyzer] Completion failed for chunk ${chunkIndex}:`, e);
     return { strong: [], weak: [], missing: [] };
   }
 };

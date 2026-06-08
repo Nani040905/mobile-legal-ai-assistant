@@ -79,6 +79,7 @@ Respond ONLY in this exact JSON format with no extra text:
 If nothing risky is found, return empty arrays. Keep each explanation under 60 words.`;
 
   try {
+    await context.clearCache();
     const result = await context.completion(
       {
         messages: [
@@ -96,26 +97,34 @@ If nothing risky is found, return empty arrays. Keep each explanation under 60 w
     const text = result.text.trim();
     // Extract JSON from response — handle cases where model wraps in markdown
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return { highRisk: [], mediumRisk: [], missing: [] };
+    if (!jsonMatch) {
+      console.warn(`[RiskAnalyzer] No JSON block found in raw output for chunk ${chunkIndex}. Raw:`, text);
+      return { highRisk: [], mediumRisk: [], missing: [] };
+    }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    const highRisk: RiskClause[] = (parsed.highRisk || []).map((item: any) => ({
-      chunkIndex,
-      level: 'high' as const,
-      clause: item.clause || '',
-      explanation: item.explanation || '',
-    }));
-    const mediumRisk: RiskClause[] = (parsed.mediumRisk || []).map((item: any) => ({
-      chunkIndex,
-      level: 'medium' as const,
-      clause: item.clause || '',
-      explanation: item.explanation || '',
-    }));
-    const missing: string[] = (parsed.missing || []).filter((s: any) => typeof s === 'string');
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const highRisk: RiskClause[] = (parsed.highRisk || []).map((item: any) => ({
+        chunkIndex,
+        level: 'high' as const,
+        clause: item.clause || '',
+        explanation: item.explanation || '',
+      }));
+      const mediumRisk: RiskClause[] = (parsed.mediumRisk || []).map((item: any) => ({
+        chunkIndex,
+        level: 'medium' as const,
+        clause: item.clause || '',
+        explanation: item.explanation || '',
+      }));
+      const missing: string[] = (parsed.missing || []).filter((s: any) => typeof s === 'string');
 
-    return { highRisk, mediumRisk, missing };
+      return { highRisk, mediumRisk, missing };
+    } catch (parseErr) {
+      console.warn(`[RiskAnalyzer] JSON parse error on chunk ${chunkIndex}. Raw JSON matched substring:`, jsonMatch[0], parseErr);
+      return { highRisk: [], mediumRisk: [], missing: [] };
+    }
   } catch (e) {
-    console.warn(`[RiskAnalyzer] Failed to parse chunk ${chunkIndex}:`, e);
+    console.warn(`[RiskAnalyzer] Completion failed for chunk ${chunkIndex}:`, e);
     return { highRisk: [], mediumRisk: [], missing: [] };
   }
 };
@@ -135,6 +144,7 @@ Number them 1–5. Each question should be specific to the risks found, not gene
 Return ONLY the numbered list of questions with no extra text.`;
 
   try {
+    await context.clearCache();
     const result = await context.completion({
       messages: [
         { role: 'system', content: 'You are a legal assistant helping a client prepare for a lawyer consultation. Generate specific questions based on document risks identified.' },
@@ -199,6 +209,7 @@ const generateRecommendations = async (
 List 3 specific recommended actions to take before proceeding. Return ONLY a numbered list, no extra text.`;
 
   try {
+    await context.clearCache();
     const result = await context.completion({
       messages: [
         { role: 'system', content: 'You are a legal risk advisor. Provide concise, actionable recommendations.' },
