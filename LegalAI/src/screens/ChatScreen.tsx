@@ -44,6 +44,7 @@ import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';        // Screen header with back button
 import ChatMessage from '../components/ChatMessage'; // Individual message bubble
 import ChatInput from '../components/ChatInput';    // Bottom input bar
+import PerspectiveSelector from '../components/PerspectiveSelector';
 
 /* Import the Zustand chat store for state management */
 import useChatStore from '../store/useChatStore';
@@ -166,6 +167,8 @@ const ChatScreen: React.FC = () => {
         showBack={true}
         onBackPress={() => navigation.goBack()} // Pop this screen off the stack
       />
+
+      <PerspectiveSelector compact={true} />
 
       {/*
        * KeyboardAvoidingView — Automatically adjusts its height/position
