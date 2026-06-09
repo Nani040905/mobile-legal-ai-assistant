@@ -26,6 +26,8 @@
 import modelManager from './modelManager';
 import { buildBudgetedContext } from './contextBudget';
 import { splitIntoChunks } from './pdfService';
+import { LegalPerspective, PERSPECTIVE_FOCUS } from '../types/legalPerspective';
+import { CaseType, CASE_TYPE_FOCUS } from '../types/caseType';
 
 /*
  * STOP_WORDS — Tokens that signal the model to stop generating.
@@ -97,10 +99,29 @@ export const getModelStatus = (): string => {
  * - top_p: 0.9 — nucleus sampling (considers top 90% probability mass)
  * - top_k: 40 — limits token selection to top 40 candidates
  */
+export const getPerspectiveCaseTypePromptPrefix = (
+  perspective: LegalPerspective = 'neutral',
+  caseType: CaseType = 'unknown'
+): string => {
+  const perspectiveFocus = PERSPECTIVE_FOCUS[perspective] || '';
+  const caseTypeFocusList = CASE_TYPE_FOCUS[caseType] || [];
+
+  let prefix = `Active Perspective: ${perspective.toUpperCase()}\nActive Case Type: ${caseType.toUpperCase()}\n\n`;
+  if (perspectiveFocus) {
+    prefix += `${perspectiveFocus}\n`;
+  }
+  if (caseTypeFocusList.length > 0) {
+    prefix += `Focus on:\n${caseTypeFocusList.map(item => `- ${item}`).join('\n')}\n`;
+  }
+  return prefix;
+};
+
 export const generateResponse = async (
   prompt: string,                  // The user's message text
   onToken?: StreamCallback,        // Optional: called for each generated token
   history?: { role: 'user' | 'assistant'; content: string }[],
+  perspective: LegalPerspective = 'neutral',
+  caseType: CaseType = 'unknown',
 ): Promise<string> => {
   /* Get the active llama.rn context from the model manager */
   const context = modelManager.getContext();
@@ -115,10 +136,16 @@ export const generateResponse = async (
   try {
     modelManager.setGenerating(true);
 
+    const prefix = getPerspectiveCaseTypePromptPrefix(perspective, caseType);
+    const systemPromptText = `You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, concise, and professional responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Always note that your responses are for informational purposes only and do not constitute legal advice.
+
+Active Context Guidelines:
+${prefix}`;
+
     const chatMLMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       {
         role: 'system',
-        content: 'You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, concise, and professional responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Always note that your responses are for informational purposes only and do not constitute legal advice.',
+        content: systemPromptText,
       },
     ];
 
@@ -136,21 +163,7 @@ export const generateResponse = async (
       content: prompt,
     });
 
-    /*
-     * context.completion() — The core inference function from llama.rn.
-     *
-     * First argument: configuration object with the prompt and parameters.
-     *   - messages: Array of ChatML-format messages (system + user)
-     *   - n_predict: Maximum number of tokens to generate
-     *   - stop: Array of stop tokens — model stops when any of these appear
-     *   - temperature: Controls randomness (0 = deterministic, 1 = very random)
-     *   - top_p: Nucleus sampling — only consider tokens in top P probability
-     *   - top_k: Only consider the K most probable next tokens
-     *
-     * Second argument: streaming callback (optional).
-     *   - Called for each token as it's generated
-     *   - Enables real-time "typing" animation in the UI
-     */
+    await context.clearCache();
     const result = await context.completion(
       {
         messages: chatMLMessages,
@@ -199,6 +212,8 @@ export const generateResponse = async (
 export const generateSummary = async (
   documentText: string,            // The extracted PDF text
   onToken?: StreamCallback,        // Optional streaming callback
+  perspective: LegalPerspective = 'neutral',
+  caseType: CaseType = 'unknown',
 ): Promise<string> => {
   /* Get the active llama.rn context */
   const context = modelManager.getContext();
@@ -215,7 +230,11 @@ export const generateSummary = async (
    * This prevents large paragraphs/documents from blowing the context budget and being ignored.
    */
   const chunks = splitIntoChunks(documentText, 1000);
-  const systemPrompt = 'You are a legal document analyst specialized in Indian Law. Provide a clear, detailed, and structured plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses.';
+  const prefix = getPerspectiveCaseTypePromptPrefix(perspective, caseType);
+  const systemPrompt = `You are a legal document analyst specialized in Indian Law. Provide a clear, detailed, and structured plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses.
+
+Active Context Guidelines:
+${prefix}`;
 
   const budgetResult = buildBudgetedContext(
     systemPrompt,
@@ -227,6 +246,7 @@ export const generateSummary = async (
 
   try {
     modelManager.setGenerating(true);
+    await context.clearCache();
     /* Run the summarization prompt through the model */
     const result = await context.completion(
       {
@@ -281,6 +301,8 @@ export const answerQuestion = async (
   question: string,                // The user's question
   contextText: string,             // The relevant document chunks (pre-selected)
   onToken?: StreamCallback,        // Optional streaming callback
+  perspective: LegalPerspective = 'neutral',
+  caseType: CaseType = 'unknown',
 ): Promise<string> => {
   /* Get the active llama.rn context */
   const context = modelManager.getContext();
@@ -297,7 +319,11 @@ export const answerQuestion = async (
    * while reserving 512 tokens for the output answer.
    */
   const contextChunks = contextText.split('\n\n---\n\n').filter(c => c.trim().length > 0);
-  const systemPrompt = 'You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document.';
+  const prefix = getPerspectiveCaseTypePromptPrefix(perspective, caseType);
+  const systemPrompt = `You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document.
+
+Active Context Guidelines:
+${prefix}`;
 
   const budgetResult = buildBudgetedContext(
     systemPrompt,
@@ -309,6 +335,7 @@ export const answerQuestion = async (
 
   try {
     modelManager.setGenerating(true);
+    await context.clearCache();
     /* Run the Q&A prompt through the model */
     const result = await context.completion(
       {

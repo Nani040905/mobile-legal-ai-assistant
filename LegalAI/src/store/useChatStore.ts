@@ -35,6 +35,8 @@ import { generateResponse, isModelReady } from '../services/llmService';
 import modelManager from '../services/modelManager';
 import { verifyAnswer, VerificationResult } from '../services/answerVerifier';
 import { CitationSource } from '../services/retrievalService';
+import { LegalPerspective } from '../types/legalPerspective';
+import { CaseType } from '../types/caseType';
 
 /*
  * Message — TypeScript interface defining the shape of a single chat message.
@@ -66,12 +68,16 @@ interface ChatState {
   /* ─── State ─── */
   messages: Message[];           // All chat messages in chronological order
   isLoading: boolean;            // True while the AI is generating a response
+  selectedPerspective: LegalPerspective;
+  selectedCaseType: CaseType;
 
   /* ─── Actions ─── */
   addMessage: (text: string, sender: 'user' | 'ai') => void;  // Add a message to the array
   sendMessage: (text: string, sourceChunks?: string[], citations?: CitationSource[]) => Promise<void>; // Send user msg + get AI response
   stopGeneration: () => Promise<void>;                          // Cancel active generation
   clearMessages: () => void;                                    // Delete all messages
+  setPerspective: (perspective: LegalPerspective) => void;
+  setCaseType: (caseType: CaseType) => void;
 }
 
 /*
@@ -110,6 +116,9 @@ const useChatStore = create<ChatState>()(
 
       /* Not loading initially — no AI request in progress */
       isLoading: false,
+
+      selectedPerspective: 'neutral',
+      selectedCaseType: 'unknown',
 
       /* ─── Actions ─── */
 
@@ -209,7 +218,9 @@ const useChatStore = create<ChatState>()(
                 ),
               }));
             },
-            history
+            history,
+            get().selectedPerspective,
+            get().selectedCaseType,
           );
 
           /* Step 5: If sourceChunks are provided, run the hallucination verifier and attach citations */
@@ -265,6 +276,14 @@ const useChatStore = create<ChatState>()(
       clearMessages: () => {
         set({ messages: [] }); // Replace messages with empty array
       },
+
+      setPerspective: (perspective: LegalPerspective) => {
+        set({ selectedPerspective: perspective });
+      },
+
+      setCaseType: (caseType: CaseType) => {
+        set({ selectedCaseType: caseType });
+      },
     }),
 
     /* ─── Persistence Configuration ─── */
@@ -284,6 +303,8 @@ const useChatStore = create<ChatState>()(
        */
       partialize: (state) => ({
         messages: state.messages, // Only persist messages, not isLoading
+        selectedPerspective: state.selectedPerspective,
+        selectedCaseType: state.selectedCaseType,
       }),
     },
   ),

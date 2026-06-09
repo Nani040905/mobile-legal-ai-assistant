@@ -20,25 +20,18 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import Header from '../components/Header';
+import PerspectiveSelector from '../components/PerspectiveSelector';
+import useChatStore from '../store/useChatStore';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import useDocumentStore from '../store/useDocumentStore';
 import { isModelReady } from '../services/llmService';
 import { analyzeRisk, RiskReport } from '../services/riskAnalyzer';
 import { analyzeEvidence, EvidenceReport } from '../services/evidenceAnalyzer';
-import { LegalPerspective, PERSPECTIVE_LABELS } from '../types/legalPerspective';
-import { CaseType, CASE_TYPE_LABELS } from '../types/caseType';
+import { LegalPerspective } from '../types/legalPerspective';
+import { CaseType } from '../types/caseType';
 
 type RouteP = RouteProp<RootStackParamList, 'RiskReport'>;
 type NavP = NativeStackNavigationProp<RootStackParamList, 'RiskReport'>;
-
-const PERSPECTIVES: LegalPerspective[] = [
-  'neutral','plaintiff','defendant','complainant','accused',
-  'petitioner','respondent','employee','employer','tenant','landlord','consumer','business',
-];
-const CASE_TYPES: CaseType[] = [
-  'unknown','criminal','civil','consumer','employment',
-  'property','family','contract','tax','constitutional',
-];
 
 const RiskReportScreen: React.FC = () => {
   const navigation = useNavigation<NavP>();
@@ -47,8 +40,8 @@ const RiskReportScreen: React.FC = () => {
   const getDocumentById = useDocumentStore(s => s.getDocumentById);
   const document = getDocumentById(docId);
 
-  const [perspective, setPerspective] = useState<LegalPerspective>('neutral');
-  const [caseType, setCaseType] = useState<CaseType>('unknown');
+  const perspective = useChatStore(s => s.selectedPerspective);
+  const caseType = useChatStore(s => s.selectedCaseType);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progressText, setProgressText] = useState('');
   const [progressCurrent, setProgressCurrent] = useState(0);
@@ -115,42 +108,14 @@ const RiskReportScreen: React.FC = () => {
         showBack
         onBackPress={() => navigation.goBack()}
       />
+      <PerspectiveSelector compact={true} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* ─── PERSPECTIVE + CASE TYPE SELECTORS ─── */}
+        {/* ─── RUN LEGAL AUDIT BUTTON ─── */}
         <View style={styles.card}>
-          <Text style={styles.selectorLabel}>Your Role (Perspective)</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-            {PERSPECTIVES.map(p => (
-              <TouchableOpacity
-                key={p}
-                style={[styles.chip, perspective === p && styles.chipActive]}
-                onPress={() => setPerspective(p)}
-              >
-                <Text style={[styles.chipText, perspective === p && styles.chipTextActive]}>
-                  {PERSPECTIVE_LABELS[p]}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <Text style={[styles.selectorLabel, { marginTop: SPACING.md }]}>Case Type</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-            {CASE_TYPES.map(c => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.chip, caseType === c && styles.chipActive]}
-                onPress={() => setCaseType(c)}
-              >
-                <Text style={[styles.chipText, caseType === c && styles.chipTextActive]}>
-                  {CASE_TYPE_LABELS[c]}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
+          <Text style={styles.selectorLabel}>Run diagnostic legal audit under selected role and case type guidelines.</Text>
           <TouchableOpacity
-            style={[styles.analyzeBtn, isAnalyzing && styles.btnDisabled]}
+            style={[styles.analyzeBtn, isAnalyzing && styles.btnDisabled, { marginTop: SPACING.md }]}
             onPress={handleAnalyze}
             disabled={isAnalyzing}
           >

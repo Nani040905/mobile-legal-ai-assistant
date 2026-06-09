@@ -41,6 +41,8 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 
 /* Import our reusable Header component for custom navigation header */
 import Header from '../components/Header';
+import PerspectiveSelector from '../components/PerspectiveSelector';
+import useChatStore from '../store/useChatStore';
 
 /* Import our custom document store containing documents state and actions */
 import useDocumentStore, { Document } from '../store/useDocumentStore';
@@ -90,6 +92,9 @@ const DocumentDetailsScreen: React.FC = () => {
 
   /* Retrieve the current document object from store using the ID parameter */
   const document = getDocumentById(docId);
+
+  const selectedPerspective = useChatStore(s => s.selectedPerspective);
+  const selectedCaseType = useChatStore(s => s.selectedCaseType);
 
   /* Local state to track active tab ('summary' or 'qa') */
   const [activeTab, setActiveTab] = useState<'summary' | 'qa'>('summary');
@@ -198,7 +203,9 @@ const DocumentDetailsScreen: React.FC = () => {
         document.extractedText,
         ({ token }) => {
           setStreamingSummary(prev => prev + token);
-        }
+        },
+        selectedPerspective,
+        selectedCaseType
       );
       /* Store the generated summary in the document store */
       updateDocumentSummary(docId, summaryText);
@@ -282,7 +289,9 @@ const DocumentDetailsScreen: React.FC = () => {
         relevantContext,
         ({ token }) => {
           setStreamingAnswer(prev => prev + token);
-        }
+        },
+        selectedPerspective,
+        selectedCaseType
       );
       /* Store the final answer in the component's state to display */
       setAnswer(answerText);
@@ -311,6 +320,8 @@ const DocumentDetailsScreen: React.FC = () => {
         showBack={true}
         onBackPress={() => navigation.goBack()}
       />
+
+      <PerspectiveSelector compact={true} />
 
       {/* Renders file metadata (size, chunks) and extraction loading state */}
       <View style={styles.metaCard}>
