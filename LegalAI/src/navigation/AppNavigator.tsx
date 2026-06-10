@@ -37,6 +37,7 @@ import BenchmarkScreen from '../screens/BenchmarkScreen';   // Performance and r
 import DebugRetrievalScreen from '../screens/DebugRetrievalScreen'; // BM25 retrieval diagnostic utility
 import RiskReportScreen from '../screens/RiskReportScreen'; // Legal audit risk + evidence report
 import StrategyScreen from '../screens/StrategyScreen';     // Legal strategy report
+import PerspectiveComparisonScreen from '../screens/PerspectiveComparisonScreen'; // Perspective comparison
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -67,6 +68,10 @@ export type RootStackParamList = {
     docName: string;
   };
   Strategy: {                 // Legal strategy screen — requires doc reference
+    docId: string;
+    docName: string;
+  };
+  PerspectiveComparison: {    // Multi-perspective comparison screen
     docId: string;
     docName: string;
   };
@@ -147,6 +152,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="DebugRetrieval" component={DebugRetrievalScreen} />
         <Stack.Screen name="RiskReport" component={RiskReportScreen} />
         <Stack.Screen name="Strategy" component={StrategyScreen} />
+        <Stack.Screen name="PerspectiveComparison" component={PerspectiveComparisonScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
