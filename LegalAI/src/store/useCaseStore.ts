@@ -9,6 +9,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { secureStorage } from '../services/secureStorage';
 import { CaseType } from '../types/caseType';
+import { TimelineEvent } from '../services/timelineGenerator';
 
 export type CaseStatus =
   | 'consultation'
@@ -29,6 +30,7 @@ export interface CaseFolder {
   caseType: CaseType;
   status: CaseStatus;         // Current phase
   nextHearingDate?: string;   // YYYY-MM-DD format
+  timelineEvents?: TimelineEvent[]; // Persisted timeline events
   documents: string[];        // Array of document IDs from useDocumentStore
   createdAt: number;
   updatedAt: number;
@@ -45,6 +47,7 @@ interface CaseState {
   removeDocumentFromCase: (caseId: string, docId: string) => void;
   setCaseStatus: (caseId: string, status: CaseStatus) => void;
   setNextHearingDate: (caseId: string, date: string | undefined) => void;
+  setTimeline: (caseId: string, events: TimelineEvent[]) => void;
   getCaseById: (id: string) => CaseFolder | undefined;
   clearAllCases: () => void;
 }
@@ -131,6 +134,16 @@ const useCaseStore = create<CaseState>()(
           cases: state.cases.map((c) =>
             c.id === caseId
               ? { ...c, nextHearingDate: date, updatedAt: Date.now() }
+              : c
+          ),
+        }));
+      },
+
+      setTimeline: (caseId, events) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+            c.id === caseId
+              ? { ...c, timelineEvents: events, updatedAt: Date.now() }
               : c
           ),
         }));
