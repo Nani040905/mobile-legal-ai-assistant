@@ -71,6 +71,13 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
  */
 const TILES = [
   {
+    id: 'cases',
+    title: 'Case Files',
+    icon: '💼',
+    route: 'Cases' as const,
+    description: 'Manage case folders & timelines',
+  },
+  {
     id: 'chat',
     title: 'Chat',
     icon: '💬',
