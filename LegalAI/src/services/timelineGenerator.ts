@@ -65,26 +65,27 @@ const scanChunkForEvents = async (
   chunk: string,
   docName: string
 ): Promise<Array<{ date: string; description: string; confidence: 'High' | 'Low' | 'Medium' }>> => {
-  const prompt = `Analyze the following legal document section from "${docName}". 
-Extract any chronological events, incident dates, filing dates, or deadlines mentioned.
+  const prompt = `You are an expert legal data extractor. Analyze the following legal document section from "${docName}".
+Extract ANY and ALL chronological events, incident dates, property transactions, or legal filings mentioned.
 
 Document Section:
 """
 ${chunk.substring(0, 1500)}
 """
 
-Respond ONLY in this exact JSON format. If no events are found, return an empty array.
+If no dates or events are found, return {"events": []}.
+Otherwise, extract them in this JSON format:
 {
   "events": [
     {
-      "date": "YYYY-MM-DD or exactly as written in text",
-      "description": "Short description of what happened",
+      "date": "Exactly as written in text (e.g., '11 Dec 2000' or '1977')",
+      "description": "Clear description of what happened",
       "confidence": "High"
     }
   ]
 }
 
-Only use "High", "Medium", or "Low" for confidence. Do not include any other text.`;
+Respond ONLY with valid JSON. Do not include markdown formatting or explanations.`;
 
   try {
     await context.clearCache();
@@ -108,12 +109,23 @@ Only use "High", "Medium", or "Low" for confidence. Do not include any other tex
       return [];
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!parsed.events || !Array.isArray(parsed.events)) {
-      return [];
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (err) {
+      // Sometimes it outputs trailing commas, try to fix basic JSON issues
+      const fixedJson = jsonMatch[0].replace(/,\s*([\]}])/g, '$1');
+      parsed = JSON.parse(fixedJson);
     }
 
-    return parsed.events.filter((e: any) => e.date && typeof e.date === 'string' && e.description && typeof e.description === 'string');
+    let eventsArr = [];
+    if (Array.isArray(parsed)) {
+      eventsArr = parsed;
+    } else if (parsed.events && Array.isArray(parsed.events)) {
+      eventsArr = parsed.events;
+    }
+
+    return eventsArr.filter((e: any) => e.date && typeof e.date === 'string' && e.description && typeof e.description === 'string');
 
   } catch (e) {
     console.warn(`[TimelineGenerator] Extraction failed for chunk:`, e);
