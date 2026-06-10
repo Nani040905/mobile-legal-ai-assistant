@@ -395,6 +395,17 @@ const DocumentDetailsScreen: React.FC = () => {
             ⚡ Strategy
           </Text>
         </TouchableOpacity>
+        {/* Multi-Perspective Comparison Button — navigates to dedicated screen */}
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => navigation.navigate('PerspectiveComparison', { docId, docName })}
+          activeOpacity={0.8}
+          disabled={!document.extractedText || isExtracting}
+        >
+          <Text style={[styles.tabText, { color: document.extractedText ? COLORS.primary : COLORS.textMuted }]}>
+            🆚 Compare
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Scrollable content section dependent on the active tab */}
