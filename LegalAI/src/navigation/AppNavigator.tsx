@@ -38,6 +38,8 @@ import DebugRetrievalScreen from '../screens/DebugRetrievalScreen'; // BM25 retr
 import RiskReportScreen from '../screens/RiskReportScreen'; // Legal audit risk + evidence report
 import StrategyScreen from '../screens/StrategyScreen';     // Legal strategy report
 import PerspectiveComparisonScreen from '../screens/PerspectiveComparisonScreen'; // Perspective comparison
+import CasesScreen from '../screens/CasesScreen';           // Case files list
+import CaseDetailsScreen from '../screens/CaseDetailsScreen'; // Case workspace hub
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -74,6 +76,11 @@ export type RootStackParamList = {
   PerspectiveComparison: {    // Multi-perspective comparison screen
     docId: string;
     docName: string;
+  };
+  Cases: undefined;           // Case list workspace
+  CaseDetails: {              // Single Case folder workspace detail
+    caseId: string;
+    caseTitle: string;
   };
 };
 
@@ -153,6 +160,8 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="RiskReport" component={RiskReportScreen} />
         <Stack.Screen name="Strategy" component={StrategyScreen} />
         <Stack.Screen name="PerspectiveComparison" component={PerspectiveComparisonScreen} />
+        <Stack.Screen name="Cases" component={CasesScreen} />
+        <Stack.Screen name="CaseDetails" component={CaseDetailsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
