@@ -106,6 +106,37 @@ const parseDateValue = (dateStr: string): number => {
   return new Date(year, month, day).getTime();
 };
 
+const extractEventsViaRegex = (
+  rawText: string
+): Array<{ date: string; description: string; confidence: 'High' | 'Low' | 'Medium' }> => {
+  const events: Array<{ date: string; description: string; confidence: 'High' | 'Low' | 'Medium' }> = [];
+  
+  const objectRegex = /\{[^{}]+\}/g;
+  const matches = rawText.match(objectRegex);
+  if (matches) {
+    for (const objStr of matches) {
+      const dateMatch = objStr.match(/"date"\s*:\s*"([^"]+)"/i);
+      const descMatch = objStr.match(/"description"\s*:\s*"([^"]+)"/i);
+      const confMatch = objStr.match(/"confidence"\s*:\s*"([^"]+)"/i);
+      
+      if (dateMatch && descMatch) {
+        const date = dateMatch[1].trim();
+        const description = descMatch[1].trim();
+        let confidence: 'High' | 'Low' | 'Medium' = 'High';
+        if (confMatch) {
+          const conf = confMatch[1].trim();
+          if (conf === 'Medium' || conf === 'Low' || conf === 'High') {
+            confidence = conf as 'High' | 'Low' | 'Medium';
+          }
+        }
+        events.push({ date, description, confidence });
+      }
+    }
+  }
+  
+  return events;
+};
+
 const scanChunkForEvents = async (
   context: LlamaContext,
   chunk: string,
@@ -145,7 +176,7 @@ Respond ONLY with valid JSON. Do not include markdown formatting or explanations
         { role: 'system', content: 'You are a legal data extractor. Respond ONLY with valid JSON. No markdown, no explanations.' },
         { role: 'user', content: prompt },
       ],
-      n_predict: 512,
+      n_predict: 768, // Increased token limit for better completion
       stop: STOP_WORDS,
       temperature: 0.1,
       top_p: 0.9,
@@ -153,35 +184,42 @@ Respond ONLY with valid JSON. Do not include markdown formatting or explanations
     });
 
     const text = result.text.trim();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    let eventsArr: any[] = [];
     
-    if (!jsonMatch) {
-      console.warn(`[TimelineGenerator] No JSON found in raw output. Raw:`, text);
-      return [];
-    }
-
-    let parsed: any;
     try {
-      parsed = JSON.parse(jsonMatch[0]);
-    } catch (err) {
-      // Sometimes it outputs trailing commas, try to fix basic JSON issues
-      const fixedJson = jsonMatch[0].replace(/,\s*([\]}])/g, '$1');
-      parsed = JSON.parse(fixedJson);
-    }
-
-    let eventsArr = [];
-    if (Array.isArray(parsed)) {
-      eventsArr = parsed;
-    } else if (parsed.events && Array.isArray(parsed.events)) {
-      eventsArr = parsed.events;
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        let parsed: any;
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch (err) {
+          // If outer JSON parse fails, fix basic trailing commas and retry
+          const fixedJson = jsonMatch[0].replace(/,\s*([\]}])/g, '$1');
+          parsed = JSON.parse(fixedJson);
+        }
+        
+        if (Array.isArray(parsed)) {
+          eventsArr = parsed;
+        } else if (parsed.events && Array.isArray(parsed.events)) {
+          eventsArr = parsed.events;
+        }
+      } else {
+        // Fallback to regex extraction directly on the raw text
+        eventsArr = extractEventsViaRegex(text);
+      }
+    } catch (parseErr: any) {
+      console.warn(`[TimelineGenerator] JSON parsing failed. Attempting regex extraction. Error:`, parseErr.message);
+      eventsArr = extractEventsViaRegex(text);
     }
 
     return eventsArr.filter((e: any) => e.date && typeof e.date === 'string' && e.description && typeof e.description === 'string');
 
-  } catch (e) {
+  } catch (e: any) {
     console.error(`[TimelineGenerator] Extraction failed for chunk:`, e);
-    // Let the manager handle crash recovery
-    await modelManager.handleCrash(e);
+    // Only trigger crash recovery for native inference execution crashes, NOT JS Parse/SyntaxErrors
+    if (!(e instanceof SyntaxError) && !e.message?.includes('JSON')) {
+      await modelManager.handleCrash(e);
+    }
     throw e;
   }
 };
