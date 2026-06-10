@@ -109,7 +109,7 @@ const CaseDetailsScreen: React.FC = () => {
     );
   };
 
-  const renderToolItem = (title: string, icon: string, phaseNum: string, enabled: boolean) => {
+  const renderToolItem = (title: string, icon: string, enabled: boolean) => {
     return (
       <TouchableOpacity
         style={[styles.toolCard, !enabled && styles.toolCardDisabled]}
@@ -122,7 +122,7 @@ const CaseDetailsScreen: React.FC = () => {
           } else {
             Alert.alert(
               'Feature Locked 🔒',
-              `The ${title} tool is scheduled for development in Phase ${phaseNum} of the roadmap.`,
+              `The ${title} tool is scheduled for future development.`,
               [{ text: 'OK' }]
             );
           }
@@ -130,9 +130,6 @@ const CaseDetailsScreen: React.FC = () => {
       >
         <Text style={styles.toolIcon}>{icon}</Text>
         <Text style={styles.toolTitle}>{title}</Text>
-        <View style={styles.phaseBadge}>
-          <Text style={styles.phaseBadgeText}>Phase {phaseNum}</Text>
-        </View>
       </TouchableOpacity>
     );
   };
@@ -276,16 +273,16 @@ const CaseDetailsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚙️ Workspace Tools</Text>
           <View style={styles.toolGrid}>
-            {renderToolItem('Timeline', '📅', '19', true)}
-            {renderToolItem('Contradictions', '⚠️', '20', false)}
-            {renderToolItem('Entity Tracker', '👥', '21', false)}
-            {renderToolItem('Missing Docs', '📂', '22', false)}
-            {renderToolItem('Hearing Prep', '⚡', '24', false)}
-            {renderToolItem('Opponent Predictor', '🎯', '24.5', false)}
-            {renderToolItem('Client Questions', '❓', '24.6', false)}
-            {renderToolItem('Draft Notice', '📝', '23', false)}
-            {renderToolItem('Indian Law Sections', '📖', '25', false)}
-            {renderToolItem('Evidence Chain', '🔗', '27', false)}
+            {renderToolItem('Timeline', '📅', true)}
+            {renderToolItem('Contradictions', '⚠️', false)}
+            {renderToolItem('Entity Tracker', '👥', false)}
+            {renderToolItem('Missing Docs', '📂', false)}
+            {renderToolItem('Hearing Prep', '⚡', false)}
+            {renderToolItem('Opponent Predictor', '🎯', false)}
+            {renderToolItem('Client Questions', '❓', false)}
+            {renderToolItem('Draft Notice', '📝', false)}
+            {renderToolItem('Indian Law Sections', '📖', false)}
+            {renderToolItem('Evidence Chain', '🔗', false)}
           </View>
         </View>
       </ScrollView>
@@ -522,18 +519,6 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontWeight: FONTS.weightBold,
     textAlign: 'center',
-  },
-  phaseBadge: {
-    backgroundColor: COLORS.surfaceVariant,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-    marginTop: SPACING.xs,
-  },
-  phaseBadgeText: {
-    fontSize: FONTS.small - 2,
-    color: COLORS.textSecondary,
-    fontWeight: FONTS.weightRegular,
   },
   modalOverlay: {
     flex: 1,
