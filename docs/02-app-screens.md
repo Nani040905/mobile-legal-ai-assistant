@@ -11,6 +11,7 @@ graph TD
     CASES -->|"Tap case"| CASEDETAILS["CaseDetailsScreen"]
     DOCS -->|"Tap document"| DETAILS["DocumentDetailsScreen"]
     CASEDETAILS -->|"Tap document"| DETAILS
+    CASEDETAILS -->|"Timeline tool"| TIMELINE["TimelineScreen"]
     DETAILS -->|"Audit tab"| RISK["RiskReportScreen"]
     DETAILS -->|"Strategy tab"| STRATEGY["StrategyScreen"]
     DETAILS -->|"Compare tab"| COMPARE["PerspectiveComparisonScreen"]
@@ -26,6 +27,7 @@ graph TD
     style RISK fill:#1a1a2e,color:#fff,stroke:#d4af37
     style STRATEGY fill:#1a1a2e,color:#fff,stroke:#d4af37
     style COMPARE fill:#1a1a2e,color:#fff,stroke:#d4af37
+    style TIMELINE fill:#1a1a2e,color:#fff,stroke:#d4af37
 ```
 
 ---
@@ -230,3 +232,15 @@ Features:
 - Horizontal scrollable Case Status chip selector.
 - Document linking and unlinking to manage case-specific attachments.
 - Interactive Workspace Tools hub (Roadmap UI for Timeline, Contradictions, Entity Tracker, etc.).
+
+---
+
+## 11. Timeline Screen
+
+Features:
+
+- Consumes all linked documents from a `CaseFolder`.
+- Real-time progress bar tracking chunk-by-chunk extraction.
+- Vertical chronological feed of extracted events.
+- Displays date, event description, source document, and confidence level (High/Medium/Low).
+- Re-run capability to generate a fresh timeline.

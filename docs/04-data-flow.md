@@ -30,6 +30,7 @@ graph TB
         RISK["Risk Report"]
         STRAT["Strategy"]
         COMPARE["Comparison"]
+        TIMELINE["Timeline"]
     end
 
     PDF --> PE --> CLEAN --> CHUNK
@@ -43,6 +44,7 @@ graph TB
     CHUNK --> RISK
     CHUNK --> STRAT
     CHUNK --> COMPARE
+    CHUNK --> TIMELINE
 ```
 
 ---
@@ -350,6 +352,35 @@ sequenceDiagram
     PC->>PC: Parse Matrix JSON
     PC-->>PCS: Side A (Claims, Evidence, Risk) vs Side B
     PCS-->>User: Renders Side-by-Side Comparison Grid
+```
+
+---
+
+## Multi-Document Timeline Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant TS as TimelineScreen
+    participant TG as timelineGenerator.ts
+    participant LLM as llmService
+    
+    User->>TS: Taps 'Generate Timeline' for Case
+    TS->>TG: generateTimeline([doc1, doc2])
+    
+    loop For each document
+        loop For each chunk
+            TG->>LLM: generate(Extract Dates/Events Prompt)
+            LLM-->>TG: JSON Array of Events
+            TG->>TG: normalizeDate(event.date)
+            TG->>TG: context.clearCache()
+        end
+    end
+    
+    TG->>TG: Combine all events
+    TG->>TG: Sort chronologically by dateValue
+    TG-->>TS: TimelineEvent[]
+    TS-->>User: Renders Chronological Feed UI
 ```
 
 ---

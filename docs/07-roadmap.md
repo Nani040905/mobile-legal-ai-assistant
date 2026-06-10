@@ -4,8 +4,8 @@
 
 ```mermaid
 pie title Phase Completion Status
-    "Complete (Phases 1-18)" : 14
-    "Remaining (Phases 19-27)" : 9
+    "Complete (Phases 1-19)" : 15
+    "Remaining (Phases 20-27)" : 8
 ```
 
 ## Timeline
@@ -43,7 +43,7 @@ gantt
     section Features
     Phase 13 - Risk Analyzer  :done, p13, after p115, 3d
     Phase 18 - Case Workspace :done, p18, after p13, 2d
-    Phase 19 - Timeline       :p19, after p18, 1d
+    Phase 19 - Timeline       :done, p19, after p18, 1d
     Phase 20 - Contradictions :p20, after p19, 2d
     Phase 24 - Hearing Prep   :p24, after p20, 2d
 ```
@@ -249,11 +249,21 @@ gantt
 
 ---
 
-## Phases 19–27 🔲
+## Phase 19 ✅
+
+**Timeline Generator**
+
+- Multi-document event extraction using chunk iteration (`timelineGenerator.ts`).
+- Normalization of unstructured dates.
+- Vertical Timeline Screen UI with progress tracking.
+- Accessible directly from Case Details tools hub.
+
+---
+
+## Phases 20–27 🔲
 
 **Advanced Legal Features Roadmap**
 
-- **Phase 19**: Timeline Generator
 - **Phase 20**: Contradiction Detector
 - **Phase 21**: Cross-Document Entity Tracker
 - **Phase 22**: Missing Document Detector
