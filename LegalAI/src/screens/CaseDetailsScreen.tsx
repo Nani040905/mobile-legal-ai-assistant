@@ -116,7 +116,9 @@ const CaseDetailsScreen: React.FC = () => {
         activeOpacity={enabled ? 0.7 : 1}
         onPress={() => {
           if (enabled) {
-            // Future navigation: e.g. navigation.navigate(...)
+            if (title === 'Timeline') {
+              navigation.navigate('Timeline', { caseId: caseObj.id, caseTitle: caseObj.title });
+            }
           } else {
             Alert.alert(
               'Feature Locked 🔒',
@@ -274,7 +276,7 @@ const CaseDetailsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚙️ Workspace Tools</Text>
           <View style={styles.toolGrid}>
-            {renderToolItem('Timeline', '📅', '19', false)}
+            {renderToolItem('Timeline', '📅', '19', true)}
             {renderToolItem('Contradictions', '⚠️', '20', false)}
             {renderToolItem('Entity Tracker', '👥', '21', false)}
             {renderToolItem('Missing Docs', '📂', '22', false)}
