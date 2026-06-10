@@ -128,8 +128,10 @@ Respond ONLY with valid JSON. Do not include markdown formatting or explanations
     return eventsArr.filter((e: any) => e.date && typeof e.date === 'string' && e.description && typeof e.description === 'string');
 
   } catch (e) {
-    console.warn(`[TimelineGenerator] Extraction failed for chunk:`, e);
-    return [];
+    console.error(`[TimelineGenerator] Extraction failed for chunk:`, e);
+    // Let the manager handle crash recovery
+    await modelManager.handleCrash(e);
+    throw e;
   }
 };
 
