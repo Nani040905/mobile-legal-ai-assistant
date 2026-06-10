@@ -48,6 +48,7 @@ const TimelineScreen: React.FC = () => {
       return;
     }
 
+    const previousEvents = events;
     setIsAnalyzing(true);
     setProgressText('Initializing AI model...');
     setProgressPercent(0);
@@ -63,6 +64,7 @@ const TimelineScreen: React.FC = () => {
       setTimeline(caseId, generatedEvents);
       setHasAnalyzed(true);
     } catch (e: any) {
+      setEvents(previousEvents);
       Alert.alert('Analysis Error', e.message || 'An error occurred while extracting timeline events.');
     } finally {
       setIsAnalyzing(false);
