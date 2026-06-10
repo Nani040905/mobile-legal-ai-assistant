@@ -4,19 +4,28 @@
 
 ```mermaid
 graph TD
-    HOME["HomeScreen"] -->|"Chat card"| CHAT["ChatScreen"]
+    HOME["HomeScreen"] -->|"Case Files card"| CASES["CasesScreen"]
+    HOME -->|"Chat card"| CHAT["ChatScreen"]
     HOME -->|"Documents card"| DOCS["DocumentsScreen"]
     HOME -->|"Settings card"| SETTINGS["SettingsScreen"]
+    CASES -->|"Tap case"| CASEDETAILS["CaseDetailsScreen"]
     DOCS -->|"Tap document"| DETAILS["DocumentDetailsScreen"]
-    DETAILS -->|"Analyze Risks (Planned)"| RISK["RiskReportScreen"]
+    CASEDETAILS -->|"Tap document"| DETAILS
+    DETAILS -->|"Audit tab"| RISK["RiskReportScreen"]
+    DETAILS -->|"Strategy tab"| STRATEGY["StrategyScreen"]
+    DETAILS -->|"Compare tab"| COMPARE["PerspectiveComparisonScreen"]
     SETTINGS -->|"Back"| HOME
 
     style HOME fill:#d4af37,color:#000
+    style CASES fill:#1a1a2e,color:#fff,stroke:#d4af37
+    style CASEDETAILS fill:#1a1a2e,color:#fff,stroke:#d4af37
     style CHAT fill:#1a1a2e,color:#fff,stroke:#d4af37
     style DOCS fill:#1a1a2e,color:#fff,stroke:#d4af37
     style SETTINGS fill:#1a1a2e,color:#fff,stroke:#d4af37
     style DETAILS fill:#1a1a2e,color:#fff,stroke:#d4af37
-    style RISK fill:#1a1a2e,color:#fff,stroke:#d4af37,stroke-dasharray: 5
+    style RISK fill:#1a1a2e,color:#fff,stroke:#d4af37
+    style STRATEGY fill:#1a1a2e,color:#fff,stroke:#d4af37
+    style COMPARE fill:#1a1a2e,color:#fff,stroke:#d4af37
 ```
 
 ---
@@ -25,7 +34,7 @@ graph TD
 
 Features:
 
-- Quick-action cards: Chat, Documents, Settings
+- Quick-action cards: Case Files, Chat, Documents, Settings
 - AI model status badge (Ready / Loading / Idle / Error / Downloading)
 - App branding and tagline
 
@@ -35,12 +44,14 @@ graph TB
         HEADER["Header: Legal AI Assistant"]
         STATUS["Model Status Badge"]
         CARDS["Action Cards Grid"]
+        CASES_CARD["💼 Case Files Card"]
         CHAT_CARD["💬 Chat Card"]
         DOCS_CARD["📄 Documents Card"]
         SETTINGS_CARD["⚙️ Settings Card"]
 
         HEADER --> STATUS
         STATUS --> CARDS
+        CARDS --> CASES_CARD
         CARDS --> CHAT_CARD
         CARDS --> DOCS_CARD
         CARDS --> SETTINGS_CARD
@@ -107,7 +118,7 @@ Features:
 - Generate AI summary (streaming)
 - Ask questions about the document (RAG with BM25 retrieval)
 - View extracted text chunks
-- Analyze Risks button (Phase 13 — planned)
+- Legal Audit, Legal Strategy, and Perspective Comparison tabs
 
 ```mermaid
 sequenceDiagram
@@ -163,11 +174,59 @@ stateDiagram-v2
 
 ---
 
-## 6. Risk Report Screen (Phase 13 — Planned)
+## 6. Risk Report Screen
 
 Features:
 
-- Color-coded risk cards (red=high, amber=medium, green=low)
-- Missing clauses section
-- Recommendations list
-- Accessed from Document Details Screen
+- Select global Legal Perspective and Case Type categories.
+- Real-time progress bar for chunk-by-chunk analysis.
+- Color-coded risk cards (🔴 High, 🟡 Medium) with missing clauses.
+- Evidence quality list (Strong, Weak, Missing).
+- AI Confidence score and generated Lawyer Consultation Questions.
+
+---
+
+## 7. Strategy Screen
+
+Features:
+
+- Context-aware SWOT analysis (Strengths, Weaknesses, Opportunities, Threats) based on Perspective/Case Type.
+- Legal Claims and Defenses builder.
+- Strategy confidence percentage.
+- Actionable next steps.
+- Copyable Lawyer Consultation Questions.
+
+---
+
+## 8. Perspective Comparison Screen
+
+Features:
+
+- Dual-perspective selectors (e.g., Plaintiff vs. Defendant).
+- Side-by-side comparison matrix of claims, evidence, and risks.
+- Comparative confidence scoring.
+- Shared consultation questions for mediation or consultation.
+
+---
+
+## 9. Cases Screen
+
+Features:
+
+- List view of Case Folders sorted by Next Hearing Date.
+- Visual case cards with metadata (Title, Court, Client, Judge, Documents count).
+- Color-coded `CaseStatus` badges (e.g., Notice Sent, Pending, Evidence).
+- Yellow highlight banner for upcoming hearings.
+- Floating Action Button to create new Case Folders via a dedicated modal.
+
+---
+
+## 10. Case Details Screen
+
+Features:
+
+- Workspace hub for a single Case Folder.
+- Inline editable metadata (Court, Judge Name, Next Hearing Date).
+- Horizontal scrollable Case Status chip selector.
+- Document linking and unlinking to manage case-specific attachments.
+- Interactive Workspace Tools hub (Roadmap UI for Timeline, Contradictions, Entity Tracker, etc.).
