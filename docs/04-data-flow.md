@@ -27,7 +27,9 @@ graph TB
         ANS["Answer"]
         SUM["Summary"]
         CIT["Citations (Planned)"]
-        RISK["Risk Report (Planned)"]
+        RISK["Risk Report"]
+        STRAT["Strategy"]
+        COMPARE["Comparison"]
     end
 
     PDF --> PE --> CLEAN --> CHUNK
@@ -39,6 +41,8 @@ graph TB
     LLAMA --> SUM
     ANS --> CIT
     CHUNK --> RISK
+    CHUNK --> STRAT
+    CHUNK --> COMPARE
 ```
 
 ---
@@ -284,27 +288,68 @@ flowchart TD
 
 ---
 
-## Risk Analysis Flow (Phase 13 — Planned)
+## Risk Analysis & Legal Audit Flow
 
 ```mermaid
 flowchart TD
-    A["Document Chunks"] --> B["riskAnalyzer.analyzeRisk()"]
-    B --> C["LLM classifies each clause"]
+    A["Document Chunks"] --> B["riskAnalyzer & evidenceAnalyzer"]
+    B --> C["LLM inspects chunks"]
     C --> D{"Risk Level"}
     D -->|"High"| E["🔴 High Risk Clauses"]
     D -->|"Medium"| F["🟡 Medium Risk Clauses"]
     D -->|"Low"| G["🟢 Low Risk Clauses"]
-    C --> H["Detect Missing Standard Clauses"]
-    H --> I["📋 Missing Clauses List"]
-    E --> J["Risk Report Screen"]
-    F --> J
-    G --> J
-    I --> J
-    J --> K["Recommendations"]
+    
+    C --> H{"Evidence Quality"}
+    H -->|"Strong"| I["🟢 Signed/Clear Evidence"]
+    H -->|"Weak"| J["🟡 Unsigned/Ambiguous"]
+    
+    E --> K["Risk Report Screen"]
+    F --> K
+    G --> K
+    I --> K
+    J --> K
+    K --> L["Lawyer Questions & Confidence Score"]
 
     style E fill:#f44336,color:#fff
     style F fill:#ff9800,color:#000
     style G fill:#4caf50,color:#fff
+    style I fill:#4caf50,color:#fff
+    style J fill:#ff9800,color:#000
+```
+
+---
+
+## Legal Strategy Generation Flow
+
+```mermaid
+flowchart TD
+    A["Document Chunks"] --> B["strategyGenerator.ts"]
+    B --> C["LLM extracts Strategy based on CaseType & Perspective"]
+    C --> D["SWOT Analysis"]
+    C --> E["Legal Arguments & Claims"]
+    D --> F["Strategy Screen"]
+    E --> F
+    F --> G["Next Steps & Action Plan"]
+```
+
+---
+
+## Multi-Perspective Comparison Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant PCS as PerspectiveComparisonScreen
+    participant PC as perspectiveComparison.ts
+    participant LLM as llmService
+    
+    User->>PCS: Selects 'Plaintiff' vs 'Defendant'
+    PCS->>PC: comparePerspectives(chunks, pA, pB, caseType)
+    PC->>LLM: generate(Comparison Matrix Prompt)
+    LLM-->>PC: JSON String
+    PC->>PC: Parse Matrix JSON
+    PC-->>PCS: Side A (Claims, Evidence, Risk) vs Side B
+    PCS-->>User: Renders Side-by-Side Comparison Grid
 ```
 
 ---

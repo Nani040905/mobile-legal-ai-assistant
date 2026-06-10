@@ -4,8 +4,8 @@
 
 ```mermaid
 pie title Phase Completion Status
-    "Complete (Phase 1-7)" : 7
-    "Remaining (Phase 8-17)" : 10
+    "Complete (Phases 1-18)" : 14
+    "Remaining (Phases 19-27)" : 9
 ```
 
 ## Timeline
@@ -41,10 +41,11 @@ gantt
     Phase 11.5 - Conv Memory  :p115, after p105, 1d
 
     section Features
-    Phase 13 - Risk Analyzer  :p13, after p115, 3d
-    Phase 15 - ELI5 Mode      :p15, after p13, 1d
-    Phase 16 - Telemetry      :p16, after p15, 1d
-    Phase 17 - Security       :p17, after p16, 2d
+    Phase 13 - Risk Analyzer  :done, p13, after p115, 3d
+    Phase 18 - Case Workspace :done, p18, after p13, 2d
+    Phase 19 - Timeline       :p19, after p18, 1d
+    Phase 20 - Contradictions :p20, after p19, 2d
+    Phase 24 - Hearing Prep   :p24, after p20, 2d
 ```
 
 ## Phase 1 ✅
@@ -224,52 +225,50 @@ gantt
 
 ---
 
-## Phase 13 🔲
+## Phase 13 ✅
 
-**Legal Risk Analyzer**
+**Legal Audit & Strategy Pipeline**
 
-- Upload contract → classify clauses (High / Medium / Low risk)
-- Detect missing standard clauses
-- Generate recommendations
-- Color-coded Risk Report Screen
-
----
-
-## Phase 14 🔲
-
-**Document Comparison**
-
-- Upload Contract V1 and V2
-- Detect added, removed, and modified clauses
-- Visual diff display
+- Phase 13.0: Chunk-by-chunk Risk Analyzer & Evidence Analyzer (High/Med risk, missing clauses, evidence strength).
+- Phase 13.5: Global Perspective & CaseType selector state.
+- Phase 13.6: Legal Strategy Generator (SWOT, Claims, Next Steps).
+- Phase 13.7: Multi-Perspective Comparison (Side-by-side analysis grid).
+- Generates Consultation Questions and Confidence Scores.
 
 ---
 
-## Phase 15 🔲
+## Phase 18 ✅
 
-**Explain Like I'm Not a Lawyer (ELI5)**
+**Case File Workspace**
 
-- Toggle for Simple English mode
-- Dual output: Legal Explanation + Plain English Explanation
-
----
-
-## Phase 16 🔲
-
-**Performance Dashboard**
-
-- Track: Model Load Time, Inference Time, Tokens/sec, Peak RAM
-- Track: Document Count, Chunk Count, Storage Usage
-- Display in Settings Screen
+- CaseFolder schema (Title, Court, Client, Judge, Type, Status, Hearing Date).
+- Zustand store persistence with array of document IDs.
+- CasesScreen list view sorted by upcoming hearing dates.
+- CaseDetailsScreen hub with inline editable metadata and status chip selector.
+- Document linking and unlinking.
 
 ---
 
-## Phase 17 🔲
+## Phases 19–27 🔲
 
-**Security & Privacy**
+**Advanced Legal Features Roadmap**
 
-- Encrypted AsyncStorage
-- Encrypted PDF storage directory
-- Secure model directory
-- Local-only processing toggle
-- Export / Delete all user data
+- **Phase 19**: Timeline Generator
+- **Phase 20**: Contradiction Detector
+- **Phase 21**: Cross-Document Entity Tracker
+- **Phase 22**: Missing Document Detector
+- **Phase 23**: Draft Generator Templates
+- **Phase 24**: Hearing Preparation Mode
+- **Phase 24.5**: Opponent Argument Predictor
+- **Phase 24.6**: Questions for Client
+- **Phase 25**: Section Extractor (Indian Law)
+- **Phase 27**: Evidence Chain Tracker
+
+---
+
+## Deferred / Dropped Features ⛔
+
+- ~~Phase 12: Voice Mode~~ (High complexity, low priority)
+- ~~Phase 14: Document Comparison~~ (Low priority vs evidence/strategy)
+- ~~Phase 15: Explain Like I'm Not a Lawyer (ELI5)~~ (Targeting working lawyers instead)
+- ~~Court/Win/Judgment Prediction~~ (Legally irresponsible)

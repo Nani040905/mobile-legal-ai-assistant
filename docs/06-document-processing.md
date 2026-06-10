@@ -26,7 +26,9 @@ flowchart LR
     F --> G{"User Action"}
     G -->|"Summarize"| H["Summary Pipeline"]
     G -->|"Ask Question"| I["RAG Pipeline"]
-    G -->|"Analyze Risk"| J["Risk Pipeline\n(Planned)"]
+    G -->|"Audit"| J["Risk & Evidence Pipeline"]
+    G -->|"Strategy"| K["Strategy Pipeline"]
+    G -->|"Compare"| L["Comparison Pipeline"]
 ```
 
 ---
@@ -175,10 +177,43 @@ sequenceDiagram
 
 ---
 
+## Legal Audit Pipeline (Risk & Evidence)
+
+### Risk Analysis
+
+1. Scans document chunks contextually.
+2. Identifies high-risk, medium-risk, and missing standard clauses based on `CaseType` and `LegalPerspective`.
+3. Produces a Risk Confidence Score and specific questions to ask an attorney.
+
+### Evidence Extractor
+
+1. Identifies and categorizes evidentiary references within the text.
+2. Classifies evidence into:
+   - **Strong Evidence**: Signed documents, formal correspondence, timestamps.
+   - **Weak Evidence**: Verbal assertions, unsigned annexures.
+   - **Missing Evidence**: Items referred to but not included.
+
+---
+
+## Legal Strategy Pipeline
+
+### SWOT Generator
+
+1. Uses `strategyGenerator.ts` to build context.
+2. Maps document text into:
+   - **Strengths**: Strong claims, clear evidence.
+   - **Weaknesses**: Missing clauses, poor formatting, contradictions.
+   - **Opportunities**: Legal loopholes, missing opponent evidence.
+   - **Threats**: Approaching deadlines, jurisdictional issues.
+3. Compiles Legal Arguments and actionable Next Steps.
+
+---
+
 ## Benefits
 
-- Faster — only relevant chunks sent to LLM
-- Lower memory usage — small context window
+- Faster — only relevant chunks sent to LLM for RAG
+- Deep Analysis — chunk-by-chunk iteration for Audit and Strategy
+- Lower memory usage — small context window managed dynamically via KV cache clearing (`context.clearCache()`)
 - Works with large PDFs — no document size limit
 - Fully offline — no internet required
 - Deterministic retrieval — same query always returns same chunks
