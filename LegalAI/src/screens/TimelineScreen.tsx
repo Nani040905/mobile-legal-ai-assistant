@@ -20,6 +20,7 @@ const TimelineScreen: React.FC = () => {
   const { caseId, caseTitle } = route.params;
 
   const caseObj = useCaseStore((state) => state.getCaseById(caseId));
+  const setTimeline = useCaseStore((state) => state.setTimeline);
   const allDocs = useDocumentStore((state) => state.documents);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -29,8 +30,11 @@ const TimelineScreen: React.FC = () => {
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
   useEffect(() => {
-    // Component mounted
-  }, []);
+    if (caseObj?.timelineEvents && caseObj.timelineEvents.length > 0) {
+      setEvents(caseObj.timelineEvents);
+      setHasAnalyzed(true);
+    }
+  }, [caseObj?.timelineEvents]);
 
   const handleGenerateTimeline = async () => {
     if (!caseObj || caseObj.documents.length === 0) {
@@ -56,6 +60,7 @@ const TimelineScreen: React.FC = () => {
       });
 
       setEvents(generatedEvents);
+      setTimeline(caseId, generatedEvents);
       setHasAnalyzed(true);
     } catch (e: any) {
       Alert.alert('Analysis Error', e.message || 'An error occurred while extracting timeline events.');
