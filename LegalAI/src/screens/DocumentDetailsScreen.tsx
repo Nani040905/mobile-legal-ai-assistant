@@ -384,6 +384,17 @@ const DocumentDetailsScreen: React.FC = () => {
             ⚖️ Audit
           </Text>
         </TouchableOpacity>
+        {/* Legal Strategy Button — navigates to dedicated screen */}
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => navigation.navigate('Strategy', { docId, docName })}
+          activeOpacity={0.8}
+          disabled={!document.extractedText || isExtracting}
+        >
+          <Text style={[styles.tabText, { color: document.extractedText ? COLORS.primary : COLORS.textMuted }]}>
+            ⚡ Strategy
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Scrollable content section dependent on the active tab */}

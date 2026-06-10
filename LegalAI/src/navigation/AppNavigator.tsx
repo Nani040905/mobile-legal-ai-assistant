@@ -36,6 +36,7 @@ import SettingsScreen from '../screens/SettingsScreen';     // App settings and 
 import BenchmarkScreen from '../screens/BenchmarkScreen';   // Performance and recall benchmarks
 import DebugRetrievalScreen from '../screens/DebugRetrievalScreen'; // BM25 retrieval diagnostic utility
 import RiskReportScreen from '../screens/RiskReportScreen'; // Legal audit risk + evidence report
+import StrategyScreen from '../screens/StrategyScreen';     // Legal strategy report
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -62,6 +63,10 @@ export type RootStackParamList = {
   Benchmark: undefined;       // No params — benchmark dashboard
   DebugRetrieval: undefined;  // No params — BM25 diagnostic screen
   RiskReport: {               // Legal audit screen — requires doc reference
+    docId: string;
+    docName: string;
+  };
+  Strategy: {                 // Legal strategy screen — requires doc reference
     docId: string;
     docName: string;
   };
@@ -141,6 +146,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Benchmark" component={BenchmarkScreen} />
         <Stack.Screen name="DebugRetrieval" component={DebugRetrievalScreen} />
         <Stack.Screen name="RiskReport" component={RiskReportScreen} />
+        <Stack.Screen name="Strategy" component={StrategyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
