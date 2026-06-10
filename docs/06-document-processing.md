@@ -29,6 +29,7 @@ flowchart LR
     G -->|"Audit"| J["Risk & Evidence Pipeline"]
     G -->|"Strategy"| K["Strategy Pipeline"]
     G -->|"Compare"| L["Comparison Pipeline"]
+    G -->|"Timeline"| M["Timeline Pipeline"]
 ```
 
 ---
@@ -206,6 +207,21 @@ sequenceDiagram
    - **Opportunities**: Legal loopholes, missing opponent evidence.
    - **Threats**: Approaching deadlines, jurisdictional issues.
 3. Compiles Legal Arguments and actionable Next Steps.
+
+## Timeline Pipeline
+
+### Multi-Document Extraction
+
+1. Receives multiple document chunks from a `CaseFolder`.
+2. Scans every chunk iteratively via `timelineGenerator.ts`.
+3. Prompts the LLM to extract dates, events, and assigning a Confidence (High/Medium/Low).
+4. Clears native cache (`context.clearCache()`) between chunks to enable large-scale processing.
+
+### Event Normalization & Sorting
+
+1. Normalizes varied text dates (e.g., "Jan 12 2026", "12/01/2026") into numeric timestamps (`dateValue`).
+2. Deduplicates similar events based on text overlap and date.
+3. Sorts events strictly chronologically, placing unparseable dates at the bottom or top depending on the view.
 
 ---
 
