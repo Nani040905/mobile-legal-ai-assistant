@@ -224,6 +224,33 @@ Respond ONLY with valid JSON. Do not include markdown formatting or explanations
   }
 };
 
+/**
+ * Quick heuristic check to see if a chunk has any chance of containing chronological events.
+ * If it doesn't contain a year, month name, or numeric date, we can skip running it through the LLM.
+ */
+const chunkMightContainDates = (chunk: string): boolean => {
+  const clean = chunk.toLowerCase();
+  
+  // 1. Look for 4-digit years between 1800 and 2100 (e.g. 1977, 2013, 2026)
+  const hasYear = /\b(18\d{2}|19\d{2}|20\d{2}|2100)\b/.test(clean);
+  if (hasYear) return true;
+  
+  // 2. Look for month names
+  const months = [
+    'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+    'january', 'february', 'march', 'april', 'june', 'july', 'august', 'september', 'october', 'november', 'december'
+  ];
+  for (const month of months) {
+    if (clean.includes(month)) return true;
+  }
+  
+  // 3. Look for numeric dates with 2 or 4-digit years (e.g. 12/05/99, 24.02.2021, 24-02-21)
+  const hasNumericDate = /\b\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\b/.test(clean);
+  if (hasNumericDate) return true;
+  
+  return false;
+};
+
 export const generateTimeline = async (
   documents: Document[],
   onProgress?: (text: string, current: number, total: number) => void
@@ -235,42 +262,44 @@ export const generateTimeline = async (
 
   const allEvents: TimelineEvent[] = [];
   
-  // Calculate total chunks for progress tracking
-  let totalChunks = 0;
+  // Pre-filter chunks to only process the ones containing dates/years
+  const targetChunks: Array<{ doc: Document; chunk: string }> = [];
   documents.forEach(doc => {
-    if (doc.chunks) totalChunks += doc.chunks.length;
+    if (!doc.chunks) return;
+    doc.chunks.forEach(chunk => {
+      if (chunkMightContainDates(chunk)) {
+        targetChunks.push({ doc, chunk });
+      }
+    });
   });
 
-  if (totalChunks === 0) {
+  const totalTargetChunks = targetChunks.length;
+  if (totalTargetChunks === 0) {
     return [];
   }
 
   let currentChunk = 0;
 
-  for (const doc of documents) {
-    if (!doc.chunks || doc.chunks.length === 0) continue;
-
-    for (let i = 0; i < doc.chunks.length; i++) {
-      currentChunk++;
-      onProgress?.(`Analyzing chunk ${currentChunk} of ${totalChunks}...`, currentChunk, totalChunks);
-      
-      const extracted = await scanChunkForEvents(context, doc.chunks[i], doc.name);
-      
-      for (const e of extracted) {
-        allEvents.push({
-          id: `evt_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-          date: e.date,
-          dateValue: parseDateValue(e.date),
-          description: e.description,
-          confidence: e.confidence || 'Medium',
-          sourceDocName: doc.name,
-          sourceDocId: doc.id,
-        });
-      }
+  for (const { doc, chunk } of targetChunks) {
+    currentChunk++;
+    onProgress?.(`Analyzing chunk ${currentChunk} of ${totalTargetChunks}...`, currentChunk, totalTargetChunks);
+    
+    const extracted = await scanChunkForEvents(context, chunk, doc.name);
+    
+    for (const e of extracted) {
+      allEvents.push({
+        id: `evt_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        date: e.date,
+        dateValue: parseDateValue(e.date),
+        description: e.description,
+        confidence: e.confidence || 'Medium',
+        sourceDocName: doc.name,
+        sourceDocId: doc.id,
+      });
     }
   }
 
-  onProgress?.('Sorting and consolidating timeline...', totalChunks, totalChunks);
+  onProgress?.('Sorting and consolidating timeline...', totalTargetChunks, totalTargetChunks);
 
   // Remove duplicates based on description similarity (simple exact match or substring)
   // Since different chunks might describe the same event.
