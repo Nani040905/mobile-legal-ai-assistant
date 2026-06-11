@@ -185,7 +185,7 @@ If nothing is found, return empty arrays. Keep descriptions and explanations und
         { role: 'system', content: 'You are a legal document auditor. Respond ONLY with valid JSON. No markdown, no conversational text.' },
         { role: 'user', content: prompt },
       ],
-      n_predict: 768,
+      n_predict: 384,
       stop: STOP_WORDS,
       temperature: 0.1,
       top_p: 0.9,
@@ -266,7 +266,7 @@ interface GroupedChunk {
   startIndex: number;
 }
 
-const groupChunks = (chunks: string[], maxChars: number = 4000): GroupedChunk[] => {
+const groupChunks = (chunks: string[], maxChars: number = 6000): GroupedChunk[] => {
   const grouped: GroupedChunk[] = [];
   let currentText = '';
   let startIndex = 0;
@@ -316,7 +316,7 @@ export const runUnifiedAnalysis = async (
   }
 
   console.log('[UnifiedAnalyzer] Cache miss. Grouping chunks to speed up inference...');
-  const grouped = groupChunks(chunks, 4000);
+  const grouped = groupChunks(chunks, 6000);
   const perspectivePrefix = buildPerspectivePrefix(perspective, caseType);
   const results: UnifiedAnalysisResult[] = [];
   const total = grouped.length;
