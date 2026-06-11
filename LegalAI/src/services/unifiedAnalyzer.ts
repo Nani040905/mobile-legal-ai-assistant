@@ -261,6 +261,36 @@ If nothing is found, return empty arrays. Keep descriptions and explanations und
   }
 };
 
+interface GroupedChunk {
+  text: string;
+  startIndex: number;
+}
+
+const groupChunks = (chunks: string[], maxChars: number = 4000): GroupedChunk[] => {
+  const grouped: GroupedChunk[] = [];
+  let currentText = '';
+  let startIndex = 0;
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    if (currentText.length + chunk.length + 2 > maxChars) {
+      if (currentText) {
+        grouped.push({ text: currentText, startIndex });
+      }
+      currentText = chunk;
+      startIndex = i;
+    } else {
+      currentText = currentText ? `${currentText}\n\n${chunk}` : chunk;
+    }
+  }
+
+  if (currentText) {
+    grouped.push({ text: currentText, startIndex });
+  }
+
+  return grouped;
+};
+
 export const runUnifiedAnalysis = async (
   chunks: string[],
   perspective: LegalPerspective,
@@ -285,14 +315,15 @@ export const runUnifiedAnalysis = async (
     return activeCache.results;
   }
 
-  console.log('[UnifiedAnalyzer] Cache miss. Initiating unified analysis run...');
+  console.log('[UnifiedAnalyzer] Cache miss. Grouping chunks to speed up inference...');
+  const grouped = groupChunks(chunks, 4000);
   const perspectivePrefix = buildPerspectivePrefix(perspective, caseType);
   const results: UnifiedAnalysisResult[] = [];
-  const total = chunks.length;
+  const total = grouped.length;
 
   for (let i = 0; i < total; i++) {
     onProgress?.(`Auditing document section ${i + 1} of ${total}...`, i + 1, total);
-    const chunkResult = await analyzeChunkUnified(context, chunks[i], i, perspectivePrefix);
+    const chunkResult = await analyzeChunkUnified(context, grouped[i].text, grouped[i].startIndex, perspectivePrefix);
     results.push(chunkResult);
   }
 
