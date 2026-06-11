@@ -236,6 +236,8 @@ List 3 specific recommended actions to take before proceeding. Return ONLY a num
   }
 };
 
+import { runUnifiedAnalysis } from './unifiedAnalyzer';
+
 /* ─── Main exported function ─── */
 
 export const analyzeRisk = async (
@@ -249,27 +251,25 @@ export const analyzeRisk = async (
     throw new Error('AI model is not loaded. Go to Settings → Load Model first.');
   }
 
-  const perspectivePrefix = buildPerspectivePrefix(perspective, caseType);
+  const total = chunks.length;
+  
+  // Call unified analysis (uses caching, so if this is run first it does the work; if second, it's instant)
+  const unifiedResults = await runUnifiedAnalysis(chunks, perspective, caseType, onProgress);
+
   const allHighRisk: RiskClause[] = [];
   const allMediumRisk: RiskClause[] = [];
   const allMissing: string[] = [];
 
-  // Analyze each chunk
-  const total = chunks.length;
-  for (let i = 0; i < total; i++) {
-    onProgress?.(`Analyzing section ${i + 1} of ${total}...`, i + 1, total);
-    const result = await analyzeChunk(context, chunks[i], i, perspectivePrefix);
-    allHighRisk.push(...result.highRisk);
-    allMediumRisk.push(...result.mediumRisk);
-    allMissing.push(...result.missing);
-  }
+  unifiedResults.forEach(r => {
+    allHighRisk.push(...r.highRisk);
+    allMediumRisk.push(...r.mediumRisk);
+    allMissing.push(...r.missingClauses);
+  });
 
   // De-duplicate missing clauses
   const uniqueMissing = [...new Set(allMissing)];
 
   // Compute confidence score
-  // Logic: chunks with any findings count as "informative"
-  const informativeChunks = allHighRisk.length + allMediumRisk.length;
   let confidence = 50; // Base confidence
   if (total >= 3) confidence += 20; // More chunks = more reliable
   if (total >= 8) confidence += 10;
