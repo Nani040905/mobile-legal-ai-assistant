@@ -101,6 +101,8 @@ Return empty arrays if no evidence is mentioned. Keep descriptions under 50 word
   }
 };
 
+import { runUnifiedAnalysis } from './unifiedAnalyzer';
+
 export const analyzeEvidence = async (
   chunks: string[],
   perspective: LegalPerspective,
@@ -117,13 +119,17 @@ export const analyzeEvidence = async (
   const allMissing: string[] = [];
 
   const total = chunks.length;
-  for (let i = 0; i < total; i++) {
-    onProgress?.(`Scanning evidence in section ${i + 1} of ${total}...`);
-    const result = await analyzeChunkForEvidence(context, chunks[i], i, perspective, caseType);
-    allStrong.push(...result.strong);
-    allWeak.push(...result.weak);
-    allMissing.push(...result.missing);
-  }
+
+  // Call unified analysis (uses caching, so it gets the previous cached results from the risk run instantly!)
+  const unifiedResults = await runUnifiedAnalysis(chunks, perspective, caseType, (text, cur, tot) => {
+    onProgress?.(`Scanning evidence: ${text}`);
+  });
+
+  unifiedResults.forEach(r => {
+    allStrong.push(...r.strongEvidence);
+    allWeak.push(...r.weakEvidence);
+    allMissing.push(...r.missingEvidence);
+  });
 
   const uniqueMissing = [...new Set(allMissing)];
 
