@@ -4,8 +4,8 @@
 
 ```mermaid
 pie title Phase Completion Status
-    "Complete" : 23
-    "Remaining" : 10
+    "Complete" : 24
+    "Remaining" : 14
 ```
 
 ## Execution Timeline (Revised)
@@ -56,9 +56,11 @@ gantt
     Phase 19.5 - Docs Reader    :done, p195, after p19, 1d
 
     section Advanced Features (Next)
-    Phase 20 - Contradictions   :p20, after p195, 2d
+    Phase 18.5 - Notes & Tags   :active, p185, after p195, 1d
+    Phase 20 - Contradictions   :p20, after p185, 2d
     Phase 21 - Entity Tracker   :p21, after p20, 2d
-    Phase 22 - Missing Docs     :p22, after p21, 1d
+    Phase 21.5 - Evidence Chain :p215, after p21, 2d
+    Phase 22 - Missing Docs     :p22, after p215, 1d
     Phase 24 - Hearing Prep     :p24, after p22, 2d
     Phase 24.5 - Opponent Pred  :p245, after p24, 1d
     Phase 24.6 - Client Qns     :p246, after p245, 1d
@@ -68,7 +70,7 @@ gantt
     section Infrastructure
     Phase 10.5 - Corpus Infra   :p105, after p25, 1d
     Phase 17 Part 2 - Privacy   :p17b, after p105, 1d
-    Phase 16 - Perf Dashboard   :active, p16, after p17b, 1d
+    Phase 16 - Perf Dashboard   :p16, after p17b, 1d
     Phase 26 - Precedent Arch   :p26, after p16, 1d
 ```
 
@@ -311,13 +313,22 @@ gantt
 
 ---
 
+## Phase 18.5 🔲 ← Next
+
+**Case Notes & Tags (No AI)**
+
+- Update `CaseFolder` schema to support custom tags and text notes list.
+- Display tags on case cards and add filter support in `CasesScreen.tsx`.
+- Add collapsible tag chip selector and notes creation/deletion layout to `CaseDetailsScreen.tsx`.
+
+---
+
 ## Phase 20 🔲
 
-**Contradiction Detector**
+**Contradiction Detector (Whole Case)**
 
-- `contradictionDetector.ts` — detects factual conflicts between two documents
-- `ContradictionScreen.tsx` — two-doc picker, side-by-side conflict cards with severity badges
-- Unlocks "Contradictions ⚠️" tool card in Case Details
+- `contradictionDetector.ts` — detects factual conflicts across all linked documents (FIR, Charge Sheet, Witness Statement, Medical Report).
+- `ContradictionScreen.tsx` — full-case contradiction scanner UI showing side-by-side conflict cards with source badges and severity ratings.
 
 ---
 
@@ -325,9 +336,17 @@ gantt
 
 **Cross-Document Entity Tracker**
 
-- `entityTracker.ts` — extracts and indexes persons, dates, amounts, case numbers across all case docs
-- `EntityTrackerScreen.tsx` — grouped entity list, tap → see which documents the entity appears in
-- Unlocks "Entity Tracker 👥" tool card in Case Details
+- `entityTracker.ts` — extracts and indexes persons, dates, amounts, case numbers across all case docs.
+- `EntityTrackerScreen.tsx` — grouped entity list, tap → see which documents the entity appears in.
+
+---
+
+## Phase 21.5 🔲
+
+**Evidence Chain Tracker**
+
+- `evidenceChainTracker.ts` — links key facts/assertions to supporting evidence found in documents vs. missing evidence gaps.
+- `EvidenceChainScreen.tsx` — visualization rendering facts with checkmarked supporting items and red-crossed missing items.
 
 ---
 
@@ -335,19 +354,17 @@ gantt
 
 **Missing Document Detector**
 
-- `missingDocDetector.ts` — CaseType-specific static checklists vs. uploaded documents
-- `MissingDocsScreen.tsx` — ✅ Present / ❌ Missing view per CaseType
-- Unlocks "Missing Docs 📂" tool card in Case Details
+- `missingDocDetector.ts` — CaseType-specific static checklists vs. uploaded documents.
+- `MissingDocsScreen.tsx` — ✅ Present / ❌ Missing view per CaseType.
 
 ---
 
 ## Phase 24 🔲
 
-**Hearing Preparation Mode**
+**Hearing Preparation Mode (with Export & Judge Qs)**
 
-- `hearingPrep.ts` — aggregates all case docs, single LLM synthesis into structured `HearingBrief`
-- `HearingPrepScreen.tsx` — 7 sections: Key Facts, Dates, Arguments, Weak Points, Opponent Questions, Court Questions, Documents to Carry
-- Unlocks "Hearing Prep ⚡" tool card in Case Details
+- `hearingPrep.ts` — synthesizes all case docs into a detailed `HearingBrief` including practical `likelyJudgeQuestions` alongside formal court questions.
+- `HearingPrepScreen.tsx` — full structured brief display with a prominent export action to PDF, DOCX, and TXT using native share.
 
 ---
 
@@ -355,10 +372,9 @@ gantt
 
 **Opponent Argument Predictor**
 
-- `opponentPredictor.ts` — predicts likely opposing arguments and generates counterarguments
-- `OpponentPredictorScreen.tsx` — two sections: Likely Arguments vs. Your Counterarguments
-- Not win prediction — litigation prep only
-- Unlocks "Opponent Predictor 🎯" tool card in Case Details
+- `opponentPredictor.ts` — predicts likely opposing arguments and generates counterarguments.
+- `OpponentPredictorScreen.tsx` — two sections: Likely Arguments vs. Your Counterarguments.
+- No win prediction — litigation prep only.
 
 ---
 
@@ -366,9 +382,8 @@ gantt
 
 **Questions for Client**
 
-- `clientQuestionGenerator.ts` — generates CaseType-specific client interview questions from doc gaps
-- `ClientQuestionsScreen.tsx` — numbered questions (copyable), Evidence Needed, Urgent Items sections
-- Unlocks "Client Questions ❓" tool card in Case Details
+- `clientQuestionGenerator.ts` — generates CaseType-specific client interview questions from doc gaps.
+- `ClientQuestionsScreen.tsx` — numbered questions (copyable), Evidence Needed, Urgent Items sections.
 
 ---
 
@@ -376,21 +391,19 @@ gantt
 
 **Draft Generator Templates**
 
-- `draftGenerator.ts` — structured prompt templates for 7 Indian legal document types
-- `DraftGeneratorScreen.tsx` — template picker, context form, generated draft with copy-to-clipboard
-- Templates: Legal Notice, Consumer Complaint, Reply Notice, RTI Application, Affidavit, Bail Petition Skeleton, Written Statement Skeleton
-- Accessible from Case Details ("Draft Notice 📝") and Home Screen
+- `draftGenerator.ts` — structured prompt templates for 7 Indian legal document types.
+- `DraftGeneratorScreen.tsx` — template picker, context form, generated draft with copy-to-clipboard.
+- Templates: Legal Notice, Consumer Complaint, Reply Notice, RTI Application, Affidavit, Bail Petition Skeleton, Written Statement Skeleton.
 
 ---
 
 ## Phase 25 🔲
 
-**Section Extractor (Indian Law)**
+**Section Extractor (Indian Law & Common Mistakes)**
 
-- `sectionExtractor.ts` — regex + LLM hybrid extraction of IPC/BNS/BNSS/CPC/BSA sections
-- `explainSection()` — ingredients, burden of proof, penalty, relevant defenses
-- `SectionExtractorScreen.tsx` — grouped by Act, tap → expand for explanation
-- Accessible from Case Details and Document Details
+- `sectionExtractor.ts` — regex + LLM hybrid extraction of IPC/BNS/BNSS/CPC/BSA sections.
+- Update `explainSection()` to include standard filing errors and warning banners for `commonMistakes`.
+- `SectionExtractorScreen.tsx` — grouped by Act, tap → expand for ingredients and common mistakes warning card.
 
 ---
 
@@ -398,8 +411,8 @@ gantt
 
 **Legal Corpus Infrastructure** (no ingestion)
 
-- `assets/legal/` directory structure with per-law `metadata.json` and README placeholders
-- `corpusManager.ts` — `listCorpusModules()`, `loadCorpusModule()`, `searchCorpus()`
+- `assets/legal/` directory structure with per-law `metadata.json` and README placeholders.
+- `corpusManager.ts` — `listCorpusModules()`, `loadCorpusModule()`, `searchCorpus()`.
 - No corpus text ingested yet — interface only. Ingestion deferred to Phase 10.
 
 ---
@@ -408,20 +421,20 @@ gantt
 
 **Privacy Controls UI**
 
-- `SettingsScreen.tsx` — Privacy & Security card
-- Local-Only Processing toggle (informational, always ON)
-- Export All Data (JSON metadata export)
-- Delete All Data (double-confirm, must type "DELETE")
+- `SettingsScreen.tsx` — Privacy & Security card.
+- Local-Only Processing toggle (informational, always ON).
+- Export All Data (JSON metadata export).
+- Delete All Data (double-confirm, must type "DELETE").
 
 ---
 
-## Phase 16 🔲 ← Next
+## Phase 16 🔲
 
 **Performance Dashboard**
 
-- `telemetry.ts` — singleton tracking modelLoadTimeMs, lastInferenceTimeMs, tokensPerSecond, peakRamMb
-- Updated by `modelManager` and `llmService` after each operation, persisted to AsyncStorage
-- `SettingsScreen.tsx` — Performance card showing all 7 metrics
+- `telemetry.ts` — singleton tracking modelLoadTimeMs, lastInferenceTimeMs, tokensPerSecond, peakRamMb.
+- Updated by `modelManager` and `llmService` after each operation, persisted to AsyncStorage.
+- `SettingsScreen.tsx` — Performance card showing all 7 metrics.
 
 ---
 
@@ -429,8 +442,8 @@ gantt
 
 **Precedent Architecture Placeholder**
 
-- `precedentService.ts` — interface-only stub, returns empty arrays
-- Hook points documented for future Indian Kanoon API or offline corpus integration
+- `precedentService.ts` — interface-only stub, returns empty arrays.
+- Hook points documented for future Indian Kanoon API or offline corpus integration.
 - `interface Precedent { caseName, court, year, sections[], summary, url? }`
 
 ---
@@ -444,3 +457,5 @@ gantt
 | Phase 14 — Document Comparison | Low priority vs. evidence and strategy pipeline |
 | Phase 15 — ELI5 Mode | Targeting working lawyers — legal language is required |
 | Court/Win/Judgment Prediction | Legally irresponsible — permanently banned |
+| Success / Probability Scores | Legally irresponsible — permanently banned |
+| Sentence duration prediction | Legally irresponsible — permanently banned |
