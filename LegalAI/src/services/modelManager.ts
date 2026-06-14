@@ -78,8 +78,11 @@ export type ModelStatus = 'not_downloaded' | 'downloading' | 'idle' | 'loading' 
 
 /*
  * MODEL_DIR — The directory where we expect the model file to be stored.
+ * We prioritize ExternalDirectoryPath so that it's located on external storage
+ * where users can easily access and delete it manually via a computer or file manager
+ * to free up space, with DocumentDirectoryPath as a fallback.
  */
-const MODEL_DIR = RNFS.DocumentDirectoryPath;
+const MODEL_DIR = RNFS.ExternalDirectoryPath || RNFS.DocumentDirectoryPath;
 
 /*
  * DOWNLOAD_FALLBACK_DIR — Alternative path for dev/testing.
@@ -212,15 +215,17 @@ const loadSavedModelPreference = async () => {
   let exists = existsInPrimary;
   resolvedModelPath = existsInPrimary ? pathToCheck : null;
 
-  if (!exists && RNFS.ExternalDirectoryPath) {
-    const externalPath = `${RNFS.ExternalDirectoryPath}/${activeModel.filename}`;
-    const existsInExternal = await verifyModelFile(externalPath);
-    if (existsInExternal) {
-      resolvedModelPath = externalPath;
+  // Fallback 1: Internal storage if primary is external
+  if (!exists && MODEL_DIR !== RNFS.DocumentDirectoryPath) {
+    const internalPath = `${RNFS.DocumentDirectoryPath}/${activeModel.filename}`;
+    const existsInInternal = await verifyModelFile(internalPath);
+    if (existsInInternal) {
+      resolvedModelPath = internalPath;
       exists = true;
     }
   }
 
+  // Fallback 2: Public Download directory
   if (!exists) {
     const fallbackPath = `${DOWNLOAD_FALLBACK_DIR}/${activeModel.filename}`;
     const existsInFallback = await verifyModelFile(fallbackPath);
@@ -268,16 +273,18 @@ const checkModelExists = async (): Promise<boolean> => {
       return true;
     }
 
-    if (RNFS.ExternalDirectoryPath) {
-      const externalPath = `${RNFS.ExternalDirectoryPath}/${activeModel.filename}`;
-      const existsInExternal = await verifyModelFile(externalPath);
-      if (existsInExternal) {
-        resolvedModelPath = externalPath;
+    // Fallback 1: Internal storage if primary is external
+    if (MODEL_DIR !== RNFS.DocumentDirectoryPath) {
+      const internalPath = `${RNFS.DocumentDirectoryPath}/${activeModel.filename}`;
+      const existsInInternal = await verifyModelFile(internalPath);
+      if (existsInInternal) {
+        resolvedModelPath = internalPath;
         setStatus('idle');
         return true;
       }
     }
 
+    // Fallback 2: Public Download directory
     const fallbackPath = `${DOWNLOAD_FALLBACK_DIR}/${activeModel.filename}`;
     const existsInFallback = await verifyModelFile(fallbackPath);
 
