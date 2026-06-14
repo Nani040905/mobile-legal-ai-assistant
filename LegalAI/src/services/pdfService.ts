@@ -67,16 +67,18 @@ This Agreement shall be governed by and construed in accordance with the laws of
 };
 
 /*
- * extractText — Extracts raw text content from a PDF file.
+ * extractText — Extracts raw text content from a file (PDF, DOCX, TXT).
  *
- * @param fileUri — The local file path/URI of the PDF.
+ * @param fileUri — The local file path/URI.
  * @returns A Promise that resolves to the extracted text string.
  *
- * Calls the custom Android Native Module to extract text offline.
+ * Calls the custom Android Native Module to extract text offline based on file extension.
  * Falls back to simulated text if running on an unsupported platform or testing.
  */
 export const extractText = async (fileUri: string): Promise<string> => {
   try {
+    const extension = fileUri.split('.').pop()?.toLowerCase() || '';
+
     /* If the native module is not registered (e.g. running on iOS or tests), fall back to stub */
     if (!PdfExtractor) {
       console.warn('[PdfService] PdfExtractor native module is not available. Falling back to stub.');
@@ -85,8 +87,16 @@ export const extractText = async (fileUri: string): Promise<string> => {
       return cleanPdfText(getSimulatedText(fileUri));
     }
 
-    /* Extract actual text content from PDF file via Native Module */
-    const text = await PdfExtractor.extractText(fileUri);
+    let text = '';
+    if (extension === 'docx') {
+      text = await PdfExtractor.extractDocxText(fileUri);
+    } else if (extension === 'txt') {
+      text = await PdfExtractor.extractTxtText(fileUri);
+    } else {
+      /* Default to PDF text extraction */
+      text = await PdfExtractor.extractText(fileUri);
+    }
+
     return cleanPdfText(text);
   } catch (error) {
     console.error('[PdfService] Error calling native PdfExtractor:', error);

@@ -84,6 +84,105 @@ class PdfExtractorModule(reactContext: ReactApplicationContext) : ReactContextBa
     }
 
     /**
+     * extractDocxText — Extracts raw text content from a DOCX (zipped XML) document.
+     */
+    @ReactMethod
+    fun extractDocxText(fileUri: String, promise: Promise) {
+        Thread {
+            try {
+                val uri = Uri.parse(fileUri)
+                val inputStream: InputStream? = if (fileUri.startsWith("content://")) {
+                    reactApplicationContext.contentResolver.openInputStream(uri)
+                } else {
+                    val path = if (fileUri.startsWith("file://")) fileUri.substring(7) else fileUri
+                    val decodedPath = java.net.URLDecoder.decode(path, "UTF-8")
+                    java.io.FileInputStream(decodedPath)
+                }
+
+                if (inputStream == null) {
+                    promise.reject("FILE_NOT_FOUND", "Could not open input stream for URI: $fileUri")
+                    return@Thread
+                }
+
+                var extractedText = ""
+                java.util.zip.ZipInputStream(inputStream).use { zipInputStream ->
+                    var entry = zipInputStream.nextEntry
+                    while (entry != null) {
+                        if (entry.name == "word/document.xml") {
+                            extractedText = parseDocxXml(zipInputStream)
+                            break
+                        }
+                        entry = zipInputStream.nextEntry
+                    }
+                }
+
+                promise.resolve(extractedText)
+            } catch (e: Exception) {
+                promise.reject("EXTRACTION_ERROR", "Failed to extract text from DOCX: ${e.message}", e)
+            }
+        }.start()
+    }
+
+    private fun parseDocxXml(inputStream: InputStream): String {
+        val builder = StringBuilder()
+        try {
+            val parser = android.util.Xml.newPullParser()
+            parser.setFeature(org.xmlpull.v1.XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+            parser.setInput(inputStream, "UTF-8")
+            var eventType = parser.eventType
+            while (eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                val name = parser.name
+                if (eventType == org.xmlpull.v1.XmlPullParser.START_TAG) {
+                    if (name == "w:t") {
+                        builder.append(parser.nextText())
+                    } else if (name == "w:tab") {
+                        builder.append("\t")
+                    } else if (name == "w:br" || name == "w:cr") {
+                        builder.append("\n")
+                    }
+                } else if (eventType == org.xmlpull.v1.XmlPullParser.END_TAG) {
+                    if (name == "w:p") {
+                        builder.append("\n")
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (e: Exception) {
+            // Return whatever was parsed so far if there's any format error
+        }
+        return builder.toString()
+    }
+
+    /**
+     * extractTxtText — Extracts text content from a plain text (.txt) document.
+     */
+    @ReactMethod
+    fun extractTxtText(fileUri: String, promise: Promise) {
+        Thread {
+            try {
+                val uri = Uri.parse(fileUri)
+                val inputStream: InputStream? = if (fileUri.startsWith("content://")) {
+                    reactApplicationContext.contentResolver.openInputStream(uri)
+                } else {
+                    val path = if (fileUri.startsWith("file://")) fileUri.substring(7) else fileUri
+                    val decodedPath = java.net.URLDecoder.decode(path, "UTF-8")
+                    java.io.FileInputStream(decodedPath)
+                }
+
+                if (inputStream == null) {
+                    promise.reject("FILE_NOT_FOUND", "Could not open input stream for URI: $fileUri")
+                    return@Thread
+                }
+
+                val text = inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                promise.resolve(text)
+            } catch (e: Exception) {
+                promise.reject("EXTRACTION_ERROR", "Failed to extract text from TXT: ${e.message}", e)
+            }
+        }.start()
+    }
+
+    /**
      * getSystemMemoryInfo — Returns current JVM and Native Heap memory utilization.
      */
     @ReactMethod
