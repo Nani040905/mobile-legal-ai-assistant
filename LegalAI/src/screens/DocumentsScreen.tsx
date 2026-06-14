@@ -112,11 +112,11 @@ const DocumentsScreen: React.FC = () => {
     try {
       /*
        * pick() opens the native file picker.
-       * type: [types.pdf] — Only show PDF files in the picker.
+       * type: [types.pdf, types.docx, types.plainText] — Support PDFs, DOCX, and TXT files.
        * Returns an array of selected files (we only allow one).
        */
       const result = await pick({
-        type: [types.pdf],  // Filter to only PDF files
+        type: [types.pdf, types.docx, types.plainText],
       });
 
       /*
@@ -127,12 +127,22 @@ const DocumentsScreen: React.FC = () => {
       if (result && result.length > 0) {
         const file = result[0]; // Get the first (and only) selected file
 
+        /* Resolve proper fallback extension */
+        const fallbackName = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          ? 'document.docx'
+          : file.type === 'text/plain'
+            ? 'document.txt'
+            : 'document.pdf';
+
+        const finalName = file.name || fallbackName;
+        const cleanedName = finalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+
         /* Use keepLocalCopy from the picker library to copy the file to documentDirectory */
         const copyResult = await keepLocalCopy({
           destination: 'documentDirectory',
           files: [{
             uri: file.uri,
-            fileName: `${Date.now()}_${(file.name || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_')}`
+            fileName: `${Date.now()}_${cleanedName}`
           }]
         });
 
@@ -144,7 +154,7 @@ const DocumentsScreen: React.FC = () => {
 
         /* Add the document with the local, permission-safe file:// URI to the store */
         addDocument({
-          name: file.name || 'Untitled.pdf',  // Use file name, fallback to 'Untitled.pdf'
+          name: finalName,                     // Use original or fallback file name
           uri: localFile.localUri,             // Local file path (starts with file://)
           size: file.size || 0,                // File size in bytes (0 if unknown)
         });
@@ -239,7 +249,7 @@ const DocumentsScreen: React.FC = () => {
         Upload your first legal document to get started with AI-powered analysis.
       </Text>
       <Text style={styles.emptyHint}>
-        Tap the + button below to upload a PDF
+        Tap the + button below to upload a PDF, DOCX, or TXT
       </Text>
     </View>
   );
@@ -249,7 +259,7 @@ const DocumentsScreen: React.FC = () => {
       {/* Header with back button */}
       <Header
         title="Documents"
-        subtitle="Upload and manage PDFs"
+        subtitle="Upload and manage PDF, DOCX, TXT files"
         showBack={true}
         onBackPress={() => navigation.goBack()}
       />
