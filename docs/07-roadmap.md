@@ -4,8 +4,8 @@
 
 ```mermaid
 pie title Phase Completion Status
-    "Complete (Phases 1–19)" : 19
-    "Remaining (Phases 19.5–26)" : 8
+    "Complete" : 23
+    "Remaining" : 10
 ```
 
 ## Execution Timeline (Revised)
@@ -53,9 +53,9 @@ gantt
     section Case Workspace (Done)
     Phase 18 - Case Workspace   :done, p18, after p137, 2d
     Phase 19 - Timeline         :done, p19, after p18, 1d
+    Phase 19.5 - Docs Reader    :done, p195, after p19, 1d
 
     section Advanced Features (Next)
-    Phase 19.5 - Docs Reader    :active, p195, 2026-06-13, 1d
     Phase 20 - Contradictions   :p20, after p195, 2d
     Phase 21 - Entity Tracker   :p21, after p20, 2d
     Phase 22 - Missing Docs     :p22, after p21, 1d
@@ -68,7 +68,7 @@ gantt
     section Infrastructure
     Phase 10.5 - Corpus Infra   :p105, after p25, 1d
     Phase 17 Part 2 - Privacy   :p17b, after p105, 1d
-    Phase 16 - Perf Dashboard   :p16, after p17b, 1d
+    Phase 16 - Perf Dashboard   :active, p16, after p17b, 1d
     Phase 26 - Precedent Arch   :p26, after p16, 1d
 ```
 
@@ -301,7 +301,7 @@ gantt
 
 ---
 
-## Phase 19.5 🔲 ← Next
+## Phase 19.5 ✅
 
 **Docs Reader (Docx & Text Extractor)**
 
@@ -415,7 +415,7 @@ gantt
 
 ---
 
-## Phase 16 🔲
+## Phase 16 🔲 ← Next
 
 **Performance Dashboard**
 

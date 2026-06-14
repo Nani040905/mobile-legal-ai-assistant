@@ -586,8 +586,8 @@ Manual verification on emulator for each feature area.
 | 14    | Phase 16                          | Performance Dashboard                                                | Medium   | 🔲 Next   |
 | 15    | Phase 10.5                        | Corpus Infrastructure (no ingestion)                                 | Medium   | 🔲        |
 | 16    | Phase 17 Part 2                   | Privacy Controls UI                                                  | Medium   | 🔲        |
-| 17    | Phase 18                          | Case File Workspace                                                  | Critical | 🔲        |
-| 18    | Phase 19                          | Timeline Generator                                                   | High     | 🔲        |
+| 17    | Phase 18                          | Case File Workspace                                                  | Critical | ✅ Done    |
+| 18    | Phase 19                          | Timeline Generator                                                   | High     | ✅ Done    |
 | 19    | Phase 20                          | Contradiction Detector                                               | High     | 🔲        |
 | 20    | Phase 21                          | Cross-Document Entity Tracker                                        | High     | 🔲        |
 | 21    | Phase 22                          | Missing Document Detector                                            | High     | 🔲        |
@@ -599,4 +599,4 @@ Manual verification on emulator for each feature area.
 | V2    | Phase 14                          | Document Comparison                                                  | Deferred | ⛔ Dropped |
 | V2    | Phase 15                          | ELI5 Plain English Mode                                              | Deferred | ⛔ Dropped |
 | –     | Court / Win / Judgment Prediction | AI prediction of case outcomes                                       | –        | ⛔ Never   |
-|       |                                   | **12 remaining**                                                     |          |           |
+|       |                                   | **10 remaining**                                                     |          |           |
