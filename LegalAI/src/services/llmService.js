@@ -136,16 +136,10 @@ caseType = 'unknown') =>
   try {
     modelManager.setGenerating(true);
 
-    const prefix = getPerspectiveCaseTypePromptPrefix(perspective, caseType);
-    const systemPromptText = `You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, concise, and professional responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Always note that your responses are for informational purposes only and do not constitute legal advice.
-
-Active Context Guidelines:
-${prefix}`;
-
     const chatMLMessages = [
     {
       role: 'system',
-      content: systemPromptText
+      content: 'You are a helpful legal AI assistant specialized in Indian Law, running offline on a mobile device. Provide clear, concise, and professional responses to legal questions based specifically on the Indian legal framework, including the Constitution of India, Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC), Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS), Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA), Code of Civil Procedure (CPC), and other Indian acts. Ground all answers and citations in the Indian legal context. Always note that your responses are for informational purposes only and do not constitute legal advice.'
     }];
 
 
@@ -167,7 +161,7 @@ ${prefix}`;
     const result = await context.completion(
       {
         messages: chatMLMessages,
-        n_predict: 1024, // Maximum tokens to generate (keeps response time ~30-60s)
+        n_predict: -1, // Remove prediction limit (generate until EOS)
         stop: STOP_WORDS, // Stop generating when any of these tokens appear
         temperature: 0.7, // Moderate creativity — balanced for legal content
         top_p: 0.9, // Nucleus sampling — consider top 90% probability mass
@@ -231,7 +225,7 @@ caseType = 'unknown') =>
    */
   const chunks = splitIntoChunks(documentText, 1000);
   const prefix = getPerspectiveCaseTypePromptPrefix(perspective, caseType);
-  const systemPrompt = `You are a legal document analyst specialized in Indian Law. Provide a clear, detailed, and structured plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses.
+  const systemPrompt = `You are a legal document analyst specialized in Indian Law. Provide a clear, detailed, and structured plain-text summary of the following legal document. Do not use markdown formatting. Include details on: document type, key parties, main terms, important dates, and notable clauses. Make the response as small and concise as possible to prevent any details (important or unimportant) from being omitted or cut off from the end.
 
 Active Context Guidelines:
 ${prefix}`;
@@ -260,7 +254,7 @@ ${prefix}`;
           content: `Please summarize the following legal document:\n\n${budgetResult.contextText}`
         }],
 
-        n_predict: 2048, // Increased prediction budget for detailed summaries
+        n_predict: -1, // Remove prediction limit (generate until EOS)
         stop: STOP_WORDS,
         temperature: 0.3, // Low temperature — summaries should be factual, not creative
         top_p: 0.9,
@@ -320,7 +314,7 @@ caseType = 'unknown') =>
    */
   const contextChunks = contextText.split('\n\n---\n\n').filter((c) => c.trim().length > 0);
   const prefix = getPerspectiveCaseTypePromptPrefix(perspective, caseType);
-  const systemPrompt = `You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document.
+  const systemPrompt = `You are a legal document assistant specialized in Indian Law. Answer the question based ONLY on the provided document context, interpreting it under Indian legal standards. If the answer is not found in the context, say so clearly. Be specific and cite relevant parts of the document. Make the response as small and concise as possible to prevent any details (important or unimportant) from being omitted or cut off from the end.
 
 Active Context Guidelines:
 ${prefix}`;
@@ -349,7 +343,7 @@ ${prefix}`;
           content: `Document context:\n${budgetResult.contextText}\n\nQuestion: ${question}`
         }],
 
-        n_predict: 1024, // Answers can be longer than summaries
+        n_predict: -1, // Remove prediction limit (generate until EOS)
         stop: STOP_WORDS,
         temperature: 0.3, // Low temperature for factual accuracy
         top_p: 0.9,
