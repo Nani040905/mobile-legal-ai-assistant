@@ -5,7 +5,7 @@
 ```mermaid
 pie title Phase Completion Status
     "Complete (Phases 1–19)" : 19
-    "Remaining (Phases 20–26)" : 7
+    "Remaining (Phases 19.5–26)" : 8
 ```
 
 ## Execution Timeline (Revised)
@@ -55,7 +55,8 @@ gantt
     Phase 19 - Timeline         :done, p19, after p18, 1d
 
     section Advanced Features (Next)
-    Phase 20 - Contradictions   :active, p20, 2026-06-13, 2d
+    Phase 19.5 - Docs Reader    :active, p195, 2026-06-13, 1d
+    Phase 20 - Contradictions   :p20, after p195, 2d
     Phase 21 - Entity Tracker   :p21, after p20, 2d
     Phase 22 - Missing Docs     :p22, after p21, 1d
     Phase 24 - Hearing Prep     :p24, after p22, 2d
@@ -300,7 +301,17 @@ gantt
 
 ---
 
-## Phase 20 🔲 ← Next
+## Phase 19.5 🔲 ← Next
+
+**Docs Reader (Docx & Text Extractor)**
+
+- `DocumentExtractorModule` — Native thread-safe parsing of Word `.docx` documents (parsing zip structure and `w:t` XML tags).
+- Exposes `extractDocxText()` and `extractTxtText()` to React Native.
+- File picker configuration in `DocumentsScreen.tsx` expanded to include `.docx` and `.txt` MIME types.
+
+---
+
+## Phase 20 🔲
 
 **Contradiction Detector**
 
