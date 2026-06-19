@@ -135,7 +135,7 @@ const useChatStore = create()(
       addMessage: (text, sender) => {
         /* Create the message object with a unique ID and current timestamp */
         const message = {
-          id: Date.now().toString(), // Timestamp as string — unique enough for our use case
+          id: Date.now().toString() + '-' + Math.floor(Math.random() * 1000000).toString(36), // Timestamp + random as string
           text, // The message content (shorthand for text: text)
           sender, // 'user' or 'ai' (shorthand for sender: sender)
           timestamp: new Date().toISOString() // ISO string — serializable and sortable

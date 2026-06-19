@@ -114,14 +114,17 @@ const STOP_WORDS = new Set([
  * terminology, exact matching works well enough.
  */
 export const tokenize = (text) => {
-  return text.
-  toLowerCase() // Step 1: case-insensitive
-  .replace(/[^\w\s]/g, ' ') // Step 2: replace punctuation with spaces
-  .split(/\s+/) // Step 3: split on whitespace
-  .filter((token) => // Step 4 & 5: remove empties, stop words, short tokens
-  token.length > 2 && // Skip tokens shorter than 3 characters
-  !STOP_WORDS.has(token) // Skip common stop words
-  );
+  if (!text || typeof text !== 'string') {
+    return [];
+  }
+  return text
+    .toLowerCase() // Step 1: case-insensitive
+    .replace(/[^\w\s]/g, ' ') // Step 2: replace punctuation with spaces
+    .split(/\s+/) // Step 3: split on whitespace
+    .filter((token) => // Step 4 & 5: remove empties, stop words, short tokens
+      token.length > 2 && // Skip tokens shorter than 3 characters
+      !STOP_WORDS.has(token) // Skip common stop words
+    );
 };
 
 /*

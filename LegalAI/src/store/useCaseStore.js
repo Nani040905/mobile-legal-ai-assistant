@@ -60,7 +60,7 @@ const useCaseStore = create()(
       addCase: (caseData) => {
         const newCase = {
           ...caseData,
-          id: Date.now().toString(),
+          id: Date.now().toString() + '-' + Math.floor(Math.random() * 1000000).toString(36),
           documents: [],
           createdAt: Date.now(),
           updatedAt: Date.now()

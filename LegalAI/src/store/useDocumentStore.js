@@ -101,7 +101,7 @@ const useDocumentStore = create()(
         /* Create the full document object with auto-generated id and timestamp */
         const newDocument = {
           ...doc, // Spread the provided fields (name, uri, size)
-          id: Date.now().toString(), // Generate a unique ID from current timestamp
+          id: Date.now().toString() + '-' + Math.floor(Math.random() * 1000000).toString(36), // Generate a unique ID from current timestamp + random suffix
           uploadedAt: new Date().toISOString() // Record the upload time as ISO string
         };
 
