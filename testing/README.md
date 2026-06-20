@@ -91,3 +91,38 @@ python -u soak/soak_runner.py 5
 $env:SOAK_DURATION=10; python -u soak/soak_runner.py
 ```
 
+---
+
+## GPU Soak Tests
+
+GPU soak tests stress-test the actual local LLM inference engines (such as `llama.cpp` or `llama.rn`) to check for context window leaks, VRAM fragmentation, stop-token loop hangs, and thermal limits.
+
+### Python GPU Soak Test
+
+To install `llama-cpp-python` without requiring Visual Studio C++ compilers or CUDA build environments, you must install the precompiled wheels from the official index:
+
+```bash
+cd python
+
+# For CPU fallback mode:
+pip install llama-cpp-python==0.3.30 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+
+# For CUDA GPU mode (replace cu121 with your CUDA version if needed, e.g., cu122):
+pip install llama-cpp-python==0.3.4 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
+
+# Run the GPU soak runner (requires setting path to your GGUF model):
+$env:MODEL_PATH="C:\path\to\model.gguf"
+python soak/gpu_soak_runner.py 60
+```
+
+### JavaScript GPU Soak Test
+
+```bash
+cd js
+
+# Optional: to run on real local GGUF models via node-llama-cpp:
+npm install node-llama-cpp
+
+# Run the JS GPU soak runner (falls back to simulated llama.rn mock if node-llama-cpp is absent):
+node soak/gpu_run.js 60
+```
