@@ -27,7 +27,7 @@ import useCaseStore from '../store/useCaseStore';
 import useDocumentStore from '../store/useDocumentStore';
 import { CASE_TYPE_LABELS } from '../types/caseType';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
-import { STATUS_LABELS, STATUS_COLORS } from './CasesScreen';
+import { STATUS_LABELS, STATUS_COLORS, TAG_COLORS } from './CasesScreen';
 
 
 
@@ -51,6 +51,9 @@ const CaseDetailsScreen = () => {
   const updateCase = useCaseStore((state) => state.updateCase);
   const addDocumentToCase = useCaseStore((state) => state.addDocumentToCase);
   const removeDocumentFromCase = useCaseStore((state) => state.removeDocumentFromCase);
+  const toggleCaseTag = useCaseStore((state) => state.toggleCaseTag);
+  const addCaseNote = useCaseStore((state) => state.addCaseNote);
+  const deleteCaseNote = useCaseStore((state) => state.deleteCaseNote);
 
   const allDocuments = useDocumentStore((state) => state.documents);
 
@@ -60,6 +63,28 @@ const CaseDetailsScreen = () => {
   const [court, setCourt] = useState(caseObj?.court || '');
   const [judgeName, setJudgeName] = useState(caseObj?.judgeName || '');
   const [nextHearingDate, setNextHearingDate] = useState(caseObj?.nextHearingDate || '');
+  const [newNoteText, setNewNoteText] = useState('');
+
+  const handleAddNote = () => {
+    if (!newNoteText.trim()) return;
+    addCaseNote(caseId, newNoteText.trim());
+    setNewNoteText('');
+  };
+
+  const handleDeleteNote = (noteId) => {
+    Alert.alert(
+      'Delete Note',
+      'Are you sure you want to delete this note?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteCaseNote(caseId, noteId)
+        }
+      ]
+    );
+  };
 
   if (!caseObj) {
     return (
@@ -225,6 +250,34 @@ const CaseDetailsScreen = () => {
           </ScrollView>
         </View>
 
+        {/* ─── CASE TAGS SELECTOR ─── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🏷️ Case Tags</Text>
+          <View style={styles.tagsContainer}>
+            {Object.keys(TAG_COLORS).map((tag) => {
+              const isTagged = caseObj.tags && caseObj.tags.includes(tag);
+              const tagColor = TAG_COLORS[tag];
+              return (
+                <TouchableOpacity
+                  key={tag}
+                  style={[
+                    styles.tagChip,
+                    isTagged && {
+                      backgroundColor: tagColor,
+                      borderColor: tagColor
+                    }
+                  ]}
+                  onPress={() => toggleCaseTag(caseObj.id, tag)}
+                >
+                  <Text style={[styles.tagChipText, isTagged && styles.activeTagChipText]}>
+                    {tag}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* ─── LINKED DOCUMENTS ─── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -283,6 +336,52 @@ const CaseDetailsScreen = () => {
             {renderToolItem('Draft Notice', '📝', false)}
             {renderToolItem('Indian Law Sections', '📖', false)}
             {renderToolItem('Evidence Chain', '🔗', false)}
+          </View>
+        </View>
+
+        {/* ─── CASE NOTES SECTION ─── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📝 Case Notes</Text>
+          <View style={styles.notesContainer}>
+            <View style={styles.noteInputRow}>
+              <TextInput
+                style={styles.noteInput}
+                placeholder="Write a custom note..."
+                placeholderTextColor={COLORS.textMuted}
+                value={newNoteText}
+                onChangeText={setNewNoteText}
+                multiline={true}
+              />
+              <TouchableOpacity
+                style={styles.addNoteBtn}
+                onPress={handleAddNote}
+              >
+                <Text style={styles.addNoteBtnText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+
+            {(!caseObj.notes || caseObj.notes.length === 0) ? (
+              <View style={styles.emptyNotesCard}>
+                <Text style={styles.emptyNotesText}>No notes added yet.</Text>
+              </View>
+            ) : (
+              [...caseObj.notes].reverse().map((note) => (
+                <View key={note.id} style={styles.noteCard}>
+                  <View style={styles.noteHeader}>
+                    <Text style={styles.noteDate}>
+                      {new Date(note.createdAt).toLocaleString()}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.deleteNoteBtn}
+                      onPress={() => handleDeleteNote(note.id)}
+                    >
+                      <Text style={styles.deleteNoteBtnText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.noteText}>{note.text}</Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
       </ScrollView>
@@ -573,6 +672,102 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontWeight: FONTS.weightSemiBold,
     flex: 1
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginTop: SPACING.xs,
+  },
+  tagChip: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  tagChipText: {
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+    fontWeight: FONTS.weightSemiBold,
+  },
+  activeTagChipText: {
+    color: COLORS.textPrimary,
+    fontWeight: FONTS.weightBold,
+  },
+  notesContainer: {
+    gap: SPACING.md,
+  },
+  noteInputRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    alignItems: 'flex-start',
+  },
+  noteInput: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.sm,
+    color: COLORS.textPrimary,
+    padding: SPACING.sm,
+    fontSize: FONTS.body,
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  addNoteBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.sm,
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+  },
+  addNoteBtnText: {
+    color: COLORS.background,
+    fontWeight: FONTS.weightBold,
+    fontSize: FONTS.body,
+  },
+  emptyNotesCard: {
+    backgroundColor: COLORS.surface,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+  emptyNotesText: {
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+  },
+  noteCard: {
+    backgroundColor: COLORS.surface,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: SPACING.xs,
+  },
+  noteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  noteDate: {
+    fontSize: FONTS.small,
+    color: COLORS.textMuted,
+  },
+  deleteNoteBtn: {
+    padding: SPACING.xs,
+  },
+  deleteNoteBtnText: {
+    fontSize: FONTS.caption,
+  },
+  noteText: {
+    fontSize: FONTS.body,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
   }
 });
 
