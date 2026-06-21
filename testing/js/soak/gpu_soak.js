@@ -1,5 +1,6 @@
-import readline from 'readline';
-
+const readline = require('readline');
+const fs = require('fs');
+ 
 const CRASH_PROMPTS = [
   'Explain Section 302 IPC.',
   'List every fundamental right in the Indian Constitution.',
@@ -62,14 +63,41 @@ async function runGpuSoak(minutes) {
   let isMock = false;
 
   try {
-    // If running in Node, check if node-llama-cpp is available for real desktop GPU runs
-    const { LlamaModel, LlamaContext } = require('node-llama-cpp');
+    const { getLlama, LlamaChatSession } = await import('node-llama-cpp');
     const modelPath = process.env.MODEL_PATH || 'model.gguf';
+    if (!fs.existsSync(modelPath)) {
+      throw new Error(`Model file not found at: ${modelPath}`);
+    }
     console.log(`[GPU] Loading real model using node-llama-cpp from: ${modelPath}`);
-    const model = new LlamaModel({ modelPath });
-    context = new LlamaContext({ model });
+    const llama = await getLlama();
+    const model = await llama.loadModel({ modelPath });
+    const nativeContext = await model.createContext();
+    const session = new LlamaChatSession({
+      contextSequence: nativeContext.getSequence()
+    });
+    context = {
+      completion: async (opts) => {
+        session.setChatHistory([]);
+        const promptText = opts.messages[opts.messages.length - 1].content;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 30000);
+        try {
+          const responseText = await session.prompt(promptText, {
+            maxTokens: opts.n_predict > 0 ? opts.n_predict : undefined,
+            temperature: opts.temperature,
+            signal: controller.signal,
+          });
+          clearTimeout(timer);
+          return { text: responseText };
+        } catch (err) {
+          clearTimeout(timer);
+          throw err;
+        }
+      }
+    };
   } catch (e) {
-    console.log('[GPU] node-llama-cpp not found or failed to load. Falling back to simulated llama.rn mock context.');
+    console.log(`[GPU] node-llama-cpp failed to load or model missing: ${e.message}`);
+    console.log('Falling back to simulated llama.rn mock context.');
     console.log('To run real GPU tests in JS/Node, run: npm install node-llama-cpp');
     isMock = true;
     
@@ -133,11 +161,12 @@ async function runGpuSoak(minutes) {
     }
 
     iteration++;
-    if (iteration % 100 === 0 || (isMock && iteration % 500 === 0)) {
+    const printInterval = isMock ? 500 : 5;
+    if (iteration % printInterval === 0) {
       const elapsed = ((Date.now() - (deadline - minutes * 60 * 1000)) / 60000).toFixed(1);
       const remaining = ((deadline - Date.now()) / 60000).toFixed(1);
       const avgMs = latencies.slice(-20).reduce((a, b) => a + b, 0) / Math.max(latencies.slice(-20).length, 1);
-      console.log(`[${elapsed}m | ${remaining}m left | ${iteration} iters | ${failures.length} failures | avg ${avgMs.toFixed(0)}ms]`);
+      console.log(`[${elapsed}m elapsed | ${remaining}m left | ${iteration} iters | ${failures.length} failures | avg ${avgMs.toFixed(0)}ms/inference]`);
     }
   }
 

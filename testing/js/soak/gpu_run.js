@@ -46,7 +46,7 @@ Module._resolveFilename = function (request, parent, isMain, options) {
 // Register @babel/register to transpile ES6 imports/exports on the fly
 require('@babel/register').default({
   presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
-  ignore: [/node_modules/]
+  ignore: [/node_modules/, /gpu_soak\.js/]
 });
 
 // Run the GPU soak test
