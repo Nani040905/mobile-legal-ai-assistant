@@ -51,6 +51,15 @@ export const STATUS_COLORS = {
   disposed: '#718096'
 };
 
+export const TAG_COLORS = {
+  'Urgent': '#E53E3E',
+  'Hearing Tomorrow': '#DD6B20',
+  'Evidence Pending': '#D69E2E',
+  'Draft Required': '#3182CE',
+  'Notice Sent': '#805AD5',
+  'Ready for Filing': '#38A169'
+};
+
 const CASE_TYPES = [
 'criminal',
 'civil',
@@ -89,9 +98,15 @@ const CasesScreen = () => {
   const [caseType, setCaseType] = useState('unknown');
   const [status, setStatus] = useState('consultation');
   const [nextHearingDate, setNextHearingDate] = useState('');
+  const [selectedTag, setSelectedTag] = useState('All');
+
+  // Filter first, then sort
+  const filteredCases = cases.filter(
+    (c) => selectedTag === 'All' || (c.tags && c.tags.includes(selectedTag))
+  );
 
   // Sort: Hearing Date (soonest first) -> then newly created first
-  const sortedCases = [...cases].sort((a, b) => {
+  const sortedCases = [...filteredCases].sort((a, b) => {
     if (a.nextHearingDate && b.nextHearingDate) {
       return a.nextHearingDate.localeCompare(b.nextHearingDate);
     }
@@ -179,6 +194,16 @@ const CasesScreen = () => {
           </View>
         </View>
 
+        {item.tags && item.tags.length > 0 ? (
+          <View style={styles.cardTagsContainer}>
+            {item.tags.map((tag) => (
+              <View key={tag} style={[styles.cardTag, { backgroundColor: TAG_COLORS[tag] || COLORS.surfaceVariant }]}>
+                <Text style={styles.cardTagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <View style={styles.divider} />
 
         <View style={styles.cardBody}>
@@ -231,6 +256,28 @@ const CasesScreen = () => {
         showBack={true}
         onBackPress={() => navigation.goBack()} />
       
+      <View style={styles.filterContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {['All', 'Urgent', 'Hearing Tomorrow', 'Evidence Pending', 'Draft Required', 'Notice Sent', 'Ready for Filing'].map((tag) => {
+            const isActive = selectedTag === tag;
+            const tagBgColor = tag === 'All' ? (isActive ? COLORS.primary : COLORS.surface) : (isActive ? TAG_COLORS[tag] : COLORS.surface);
+            return (
+              <TouchableOpacity
+                key={tag}
+                style={[
+                  styles.filterChip,
+                  { backgroundColor: tagBgColor, borderColor: isActive ? tagBgColor : COLORS.border }
+                ]}
+                onPress={() => setSelectedTag(tag)}
+              >
+                <Text style={[styles.filterChipText, isActive && styles.activeFilterChipText]}>
+                  {tag}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <FlatList
         data={sortedCases}
@@ -616,6 +663,47 @@ const styles = StyleSheet.create({
     color: COLORS.background,
     fontSize: FONTS.body,
     fontWeight: FONTS.weightBold
+  },
+  filterContainer: {
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  filterScroll: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  filterChip: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+  },
+  filterChipText: {
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+    fontWeight: FONTS.weightSemiBold,
+  },
+  activeFilterChipText: {
+    color: COLORS.textPrimary,
+    fontWeight: FONTS.weightBold,
+  },
+  cardTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
+    marginTop: SPACING.sm,
+  },
+  cardTag: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+  },
+  cardTagText: {
+    fontSize: FONTS.small - 2,
+    color: COLORS.textPrimary,
+    fontWeight: FONTS.weightBold,
   }
 });
 

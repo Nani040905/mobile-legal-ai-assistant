@@ -62,6 +62,8 @@ const useCaseStore = create()(
           ...caseData,
           id: Date.now().toString() + '-' + Math.floor(Math.random() * 1000000).toString(36),
           documents: [],
+          tags: [],
+          notes: [],
           createdAt: Date.now(),
           updatedAt: Date.now()
         };
@@ -111,6 +113,60 @@ const useCaseStore = create()(
               return {
                 ...c,
                 documents: c.documents.filter((id) => id !== docId),
+                updatedAt: Date.now()
+              };
+            }
+            return c;
+          })
+        }));
+      },
+
+      addCaseNote: (caseId, text) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+            c.id === caseId
+              ? {
+                  ...c,
+                  notes: [
+                    ...(c.notes || []),
+                    {
+                      id: Date.now().toString() + '-' + Math.floor(Math.random() * 1000000).toString(36),
+                      text,
+                      createdAt: Date.now()
+                    }
+                  ],
+                  updatedAt: Date.now()
+                }
+              : c
+          )
+        }));
+      },
+
+      deleteCaseNote: (caseId, noteId) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+            c.id === caseId
+              ? {
+                  ...c,
+                  notes: (c.notes || []).filter((n) => n.id !== noteId),
+                  updatedAt: Date.now()
+                }
+              : c
+          )
+        }));
+      },
+
+      toggleCaseTag: (caseId, tag) => {
+        set((state) => ({
+          cases: state.cases.map((c) => {
+            if (c.id === caseId) {
+              const currentTags = c.tags || [];
+              const newTags = currentTags.includes(tag)
+                ? currentTags.filter((t) => t !== tag)
+                : [...currentTags, tag];
+              return {
+                ...c,
+                tags: newTags,
                 updatedAt: Date.now()
               };
             }
