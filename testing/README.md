@@ -97,32 +97,55 @@ $env:SOAK_DURATION=10; python -u soak/soak_runner.py
 
 GPU soak tests stress-test the actual local LLM inference engines (such as `llama.cpp` or `llama.rn`) to check for context window leaks, VRAM fragmentation, stop-token loop hangs, and thermal limits.
 
-### Python GPU Soak Test
+### 0. Model Setup (Recommended)
+To run GPU soak tests on real hardware rather than simulated fallbacks, download a small GGUF model (e.g., SmolLM 135M):
+* **Recommended Model:** `smollm-135m-instruct-add-basics-q8_0.gguf` (approx. 145 MB).
+* Save the file to a local path, e.g. `testing/python/model.gguf`. (GGUF files are ignored by git in `.gitignore`).
 
-To install `llama-cpp-python` without requiring Visual Studio C++ compilers or CUDA build environments, you must install the precompiled wheels from the official index:
+---
+
+### 1. Python GPU Soak Test
+
+To install `llama-cpp-python` without requiring Visual Studio compilers or CUDA build environments, install precompiled wheels:
 
 ```bash
 cd python
 
-# For CPU fallback mode:
+# For CPU mode:
 pip install llama-cpp-python==0.3.30 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 
-# For CUDA GPU mode (replace cu121 with your CUDA version if needed, e.g., cu122):
+# For CUDA GPU mode (replace cu121 with your CUDA version, e.g., cu121, cu124):
 pip install llama-cpp-python==0.3.4 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
 
-# Run the GPU soak runner (requires setting path to your GGUF model):
-$env:MODEL_PATH="C:\path\to\model.gguf"
-python soak/gpu_soak_runner.py 60
+# Run the GPU soak runner (specify duration in minutes):
+$env:MODEL_PATH="model.gguf"
+$env:SOAK_DURATION=15
+python -u soak/gpu_soak_runner.py
 ```
+> [!NOTE]
+> If CUDA runtime DLLs (e.g. `cudart64_12.dll`) are missing or not in the environment path on Windows, `llama-cpp-python` will fail to import. The runner will automatically print a warning and fall back to the **simulated GPU mock mode** to prevent any execution crashes.
 
-### JavaScript GPU Soak Test
+---
 
-```bash
-cd js
+### 2. JavaScript GPU Soak Test
 
-# Optional: to run on real local GGUF models via node-llama-cpp:
-npm install node-llama-cpp
+The JS GPU soak runner is powered by `node-llama-cpp`. It automatically uses precompiled Vulkan, Direct3D, or CUDA backends, making GPU inference accessible on Windows even without a CUDA installation.
 
-# Run the JS GPU soak runner (falls back to simulated llama.rn mock if node-llama-cpp is absent):
-node soak/gpu_run.js 60
-```
+* **Install node-llama-cpp**:
+  ```bash
+  cd js
+  npm install node-llama-cpp
+  ```
+
+* **Run the runner**:
+  ```bash
+  cd js
+  # Run for 15 minutes with model path
+  $env:MODEL_PATH="../python/model.gguf"
+  $env:SOAK_DURATION=15
+  node soak/gpu_run.js
+  ```
+
+> [!TIP]
+> * **Timeout Protection**: The runner utilizes `AbortController` timeout protection (30s limit per prompt) to automatically cancel and log iterations that get stuck in infinite stop-token repetition loops.
+> * **Mock Fallback**: If `node-llama-cpp` is missing or fails to load, the runner automatically falls back to the **simulated mock runner**.
