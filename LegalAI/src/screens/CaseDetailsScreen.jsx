@@ -143,6 +143,8 @@ const CaseDetailsScreen = () => {
           if (enabled) {
             if (title === 'Timeline') {
               navigation.navigate('Timeline', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Contradictions') {
+              navigation.navigate('Contradiction', { caseId: caseObj.id, caseTitle: caseObj.title });
             }
           } else {
             Alert.alert(
@@ -327,7 +329,7 @@ const CaseDetailsScreen = () => {
           <Text style={styles.sectionTitle}>⚙️ Workspace Tools</Text>
           <View style={styles.toolGrid}>
             {renderToolItem('Timeline', '📅', true)}
-            {renderToolItem('Contradictions', '⚠️', false)}
+            {renderToolItem('Contradictions', '⚠️', true)}
             {renderToolItem('Entity Tracker', '👥', false)}
             {renderToolItem('Missing Docs', '📂', false)}
             {renderToolItem('Hearing Prep', '⚡', false)}
