@@ -1,7 +1,7 @@
-import modelManager from '../src/services/modelManager';
-import { detectContradictions } from '../src/services/contradictionDetector';
+import modelManager from '../../../../LegalAI/src/services/modelManager';
+import { detectContradictions } from '../../../../LegalAI/src/services/contradictionDetector';
 
-jest.mock('../src/services/modelManager', () => ({
+jest.mock('../../../../LegalAI/src/services/modelManager', () => ({
   __esModule: true,
   default: {
     getContext: jest.fn()
