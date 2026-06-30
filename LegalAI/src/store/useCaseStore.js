@@ -205,6 +205,16 @@ const useCaseStore = create()(
         }));
       },
 
+      setContradictionReport: (caseId, report) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+          c.id === caseId ?
+          { ...c, contradictionReport: report, updatedAt: Date.now() } :
+          c
+          )
+        }));
+      },
+
       getCaseById: (id) => {
         return get().cases.find((c) => c.id === id);
       },
