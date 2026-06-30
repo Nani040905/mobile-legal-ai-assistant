@@ -183,6 +183,8 @@ If no contradictions or inconsistencies are found, return {"contradictions": []}
         const parsed = JSON.parse(jsonMatch[0].replace(/,\s*([\]}])/g, '$1'));
         if (parsed.contradictions && Array.isArray(parsed.contradictions)) {
           contradictions = parsed.contradictions;
+        } else if (parsed.topic && parsed.statementA && parsed.statementB) {
+          contradictions = [parsed];
         }
       } else {
         contradictions = parseContradictionsViaRegex(text);
