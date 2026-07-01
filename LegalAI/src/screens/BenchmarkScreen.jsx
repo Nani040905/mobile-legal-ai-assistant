@@ -403,7 +403,7 @@ const BenchmarkScreen = () => {
             <View style={styles.tableContainer}>
                   {/* Table Header */}
                   <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                    <Text style={[styles.tableColHeader, { flex: 2, textAlign: 'left' }]}>Model</Text>
+                    <Text style={[styles.tableColHeader, styles.tableColHeaderModel]}>Model</Text>
                     <Text style={styles.tableColHeader}>Load</Text>
                     <Text style={styles.tableColHeader}>Tok/s</Text>
                     <Text style={styles.tableColHeader}>RAM</Text>
@@ -413,7 +413,7 @@ const BenchmarkScreen = () => {
                   {/* Table Body */}
                   {comparisonResults.map((res) =>
               <View key={res.modelId} style={styles.tableRow}>
-                      <Text style={[styles.tableCellName, { flex: 2 }]}>
+                      <Text style={[styles.tableCellName, styles.tableCellNameFlex]}>
                         {res.modelId === 'qwen-2.5-3b' ? 'Qwen 3B' : res.modelId === 'qwen-2.5-1.5b' ? 'Qwen 1.5B' : 'Llama 1B'}
                       </Text>
                       {res.downloaded ?
@@ -435,7 +435,7 @@ const BenchmarkScreen = () => {
                           </Text>
                         </> :
 
-                <Text style={[styles.tableCell, { flex: 5, color: COLORS.warning, fontWeight: 'bold' }]}>
+                  <Text style={[styles.tableCell, styles.tableCellNotDownloaded]}>
                           Not Downloaded
                         </Text>
                 }
@@ -713,6 +713,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     textAlign: 'center'
+  },
+  tableColHeaderModel: {
+    flex: 2,
+    textAlign: 'left'
+  },
+  tableCellNameFlex: {
+    flex: 2
+  },
+  tableCellNotDownloaded: {
+    flex: 5,
+    color: COLORS.warning,
+    fontWeight: 'bold'
   },
   progressOverlay: {
     backgroundColor: COLORS.background,

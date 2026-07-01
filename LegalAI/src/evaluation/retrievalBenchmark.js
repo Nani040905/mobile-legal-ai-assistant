@@ -109,7 +109,6 @@ const getMemoryBytes = async () => {
  */
 export const runFullBenchmark = async () => {
   const startMemory = await getMemoryBytes();
-  const startTimeTotal = Date.now();
 
   const questions = benchmarkQuestions;
   const docCache = new Map();

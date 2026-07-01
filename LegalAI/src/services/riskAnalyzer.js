@@ -15,8 +15,6 @@
 
 
 import modelManager from './modelManager';
-import { PERSPECTIVE_FOCUS } from '../types/legalPerspective';
-import { CASE_TYPE_FOCUS } from '../types/caseType';
 
 const STOP_WORDS = ['<|im_end|>', '<|endoftext|>', '</s>', '[INST]'];
 
@@ -43,91 +41,6 @@ const STOP_WORDS = ['<|im_end|>', '<|endoftext|>', '</s>', '[INST]'];
 
 
 /* ─── Internal helpers ─── */
-
-const buildPerspectivePrefix = (perspective, caseType) => {
-  const focusList = CASE_TYPE_FOCUS[caseType].map((f) => `- ${f}`).join('\n');
-  return `Perspective: ${perspective.charAt(0).toUpperCase() + perspective.slice(1)}
-Case Type: ${caseType.charAt(0).toUpperCase() + caseType.slice(1)}
-${PERSPECTIVE_FOCUS[perspective]}
-
-Focus specifically on:
-${focusList}`;
-};
-
-const analyzeChunk = async (
-context,
-chunk,
-chunkIndex,
-perspectivePrefix) =>
-{
-  const prompt = `${perspectivePrefix}
-
-Analyze the following legal document section (chunk ${chunkIndex + 1}) for risks and issues.
-
-Document Section:
-"""
-${chunk.substring(0, 1200)}
-"""
-
-Respond ONLY in this exact JSON format with no extra text:
-{
-  "highRisk": [{"clause": "brief quote or description", "explanation": "why risky"}],
-  "mediumRisk": [{"clause": "brief quote or description", "explanation": "why risky"}],
-  "missing": ["missing provision name"]
-}
-
-If nothing risky is found, return empty arrays. Keep each explanation under 60 words.`;
-
-  try {
-    await context.clearCache();
-    const result = await context.completion(
-      {
-        messages: [
-        { role: 'system', content: 'You are a legal document risk analyzer. Respond ONLY with valid JSON matching the requested format. No markdown, no explanations outside JSON.' },
-        { role: 'user', content: prompt }],
-
-        n_predict: 512,
-        stop: STOP_WORDS,
-        temperature: 0.1,
-        top_p: 0.9,
-        top_k: 20
-      }
-    );
-
-    const text = result.text.trim();
-    // Extract JSON from response — handle cases where model wraps in markdown
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.warn(`[RiskAnalyzer] No JSON block found in raw output for chunk ${chunkIndex}. Raw:`, text);
-      return { highRisk: [], mediumRisk: [], missing: [] };
-    }
-
-    try {
-      const parsed = JSON.parse(jsonMatch[0]);
-      const highRisk = (parsed.highRisk || []).map((item) => ({
-        chunkIndex,
-        level: 'high',
-        clause: item.clause || '',
-        explanation: item.explanation || ''
-      }));
-      const mediumRisk = (parsed.mediumRisk || []).map((item) => ({
-        chunkIndex,
-        level: 'medium',
-        clause: item.clause || '',
-        explanation: item.explanation || ''
-      }));
-      const missing = (parsed.missing || []).filter((s) => typeof s === 'string');
-
-      return { highRisk, mediumRisk, missing };
-    } catch (parseErr) {
-      console.warn(`[RiskAnalyzer] JSON parse error on chunk ${chunkIndex}. Raw JSON matched substring:`, jsonMatch[0], parseErr);
-      return { highRisk: [], mediumRisk: [], missing: [] };
-    }
-  } catch (e) {
-    console.warn(`[RiskAnalyzer] Completion failed for chunk ${chunkIndex}:`, e);
-    return { highRisk: [], mediumRisk: [], missing: [] };
-  }
-};
 
 const generateLawyerQuestions = async (
 context,

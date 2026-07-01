@@ -167,7 +167,7 @@ const HomeScreen = () => {
       useNativeDriver: true // Native thread for 60fps smoothness
     })]
     ).start(); // .start() kicks off the animation — without it, nothing happens
-  }, []); // Empty array = run only on mount, not on subsequent re-renders
+  }, [fadeAnim, slideAnim]); // Run on mount, dependencies are stable refs
 
   return (
     /*
