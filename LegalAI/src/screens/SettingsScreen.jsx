@@ -425,7 +425,7 @@ const SettingsScreen = () => {
             }
 
             {modelStatus === 'error' &&
-            <View style={{ flex: 1 }}>
+            <View style={styles.flex1}>
                 <TouchableOpacity
                 style={styles.actionButton}
                 onPress={async () => {
@@ -859,6 +859,9 @@ const styles = StyleSheet.create({
   inactiveLabel: {
     fontSize: 11,
     color: COLORS.textMuted
+  },
+  flex1: {
+    flex: 1
   }
 });
 

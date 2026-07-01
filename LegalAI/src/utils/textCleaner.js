@@ -24,6 +24,7 @@ export const cleanPdfText = (raw) => {
   text = text.replace(/\r\n/g, '\n');
 
   // 2. Remove non-printable or control characters (except tabs and newlines)
+  // eslint-disable-next-line no-control-regex
   text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
   // 3. Remove zero-width spaces, soft hyphens, and other special characters
