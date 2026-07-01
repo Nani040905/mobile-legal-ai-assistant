@@ -11,7 +11,6 @@ import modelManager from './modelManager';
 
 
 
-const STOP_WORDS = ['<|im_end|>', '<|endoftext|>', '</s>', '[INST]'];
 
 
 
@@ -23,83 +22,6 @@ const STOP_WORDS = ['<|im_end|>', '<|endoftext|>', '</s>', '[INST]'];
 
 
 
-
-
-
-
-const analyzeChunkForEvidence = async (
-context,
-chunk,
-chunkIndex,
-perspective,
-caseType) =>
-{
-  const prompt = `You are analyzing evidence quality in a legal document for a ${perspective} in a ${caseType} case.
-
-Document Section:
-"""
-${chunk.substring(0, 1000)}
-"""
-
-Identify evidence mentioned in this section. Classify as:
-- STRONG: Signed documents, filed FIRs, receipts, official certificates, dated agreements, court orders
-- WEAK: Unsigned documents, verbal references, undated documents, single-witness statements, copies without originals
-
-Respond ONLY in this JSON format:
-{
-  "strong": [{"item": "evidence description", "reference": "clause or section if mentioned"}],
-  "weak": [{"item": "evidence description", "reference": "clause or section if mentioned"}],
-  "missing": ["type of evidence that should exist but is absent"]
-}
-
-Return empty arrays if no evidence is mentioned. Keep descriptions under 50 words.`;
-
-  try {
-    await context.clearCache();
-    const result = await context.completion({
-      messages: [
-      { role: 'system', content: 'You are a legal evidence analyst. Respond ONLY with valid JSON. No extra text.' },
-      { role: 'user', content: prompt }],
-
-      n_predict: 400,
-      stop: STOP_WORDS,
-      temperature: 0.1,
-      top_p: 0.9,
-      top_k: 20
-    });
-
-    const text = result.text.trim();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.warn(`[EvidenceAnalyzer] No JSON block found in raw output for chunk ${chunkIndex}. Raw:`, text);
-      return { strong: [], weak: [], missing: [] };
-    }
-
-    try {
-      const parsed = JSON.parse(jsonMatch[0]);
-
-      const strong = (parsed.strong || []).map((item) => ({
-        chunkIndex,
-        item: item.item || '',
-        reference: item.reference || ''
-      }));
-      const weak = (parsed.weak || []).map((item) => ({
-        chunkIndex,
-        item: item.item || '',
-        reference: item.reference || ''
-      }));
-      const missing = (parsed.missing || []).filter((s) => typeof s === 'string');
-
-      return { strong, weak, missing };
-    } catch (parseErr) {
-      console.warn(`[EvidenceAnalyzer] JSON parse error on chunk ${chunkIndex}. Raw JSON matched substring:`, jsonMatch[0], parseErr);
-      return { strong: [], weak: [], missing: [] };
-    }
-  } catch (e) {
-    console.warn(`[EvidenceAnalyzer] Completion failed for chunk ${chunkIndex}:`, e);
-    return { strong: [], weak: [], missing: [] };
-  }
-};
 
 import { runUnifiedAnalysis } from './unifiedAnalyzer';
 

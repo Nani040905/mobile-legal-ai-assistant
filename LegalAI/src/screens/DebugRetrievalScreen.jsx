@@ -178,7 +178,7 @@ const DebugRetrievalScreen = () => {
         </View>
 
         {/* Results */}
-        <View style={[styles.section, { flex: 1, paddingBottom: SPACING.xl }]}>
+        <View style={[styles.section, styles.resultsSection]}>
           <Text style={styles.sectionTitle}>3. BM25 Scoring Analysis (Top 10)</Text>
 
           {!searched &&
@@ -366,6 +366,10 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginTop: SPACING.sm,
     textAlign: 'right'
+  },
+  resultsSection: {
+    flex: 1,
+    paddingBottom: SPACING.xl
   }
 });
 
