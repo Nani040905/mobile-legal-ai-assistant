@@ -225,6 +225,26 @@ const useCaseStore = create()(
         }));
       },
 
+      setEvidenceChainReport: (caseId, report) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+          c.id === caseId ?
+          { ...c, evidenceChainReport: report, updatedAt: Date.now() } :
+          c
+          )
+        }));
+      },
+
+      setMissingDocsReport: (caseId, report) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+          c.id === caseId ?
+          { ...c, missingDocsReport: report, updatedAt: Date.now() } :
+          c
+          )
+        }));
+      },
+
       getCaseById: (id) => {
         return get().cases.find((c) => c.id === id);
       },
