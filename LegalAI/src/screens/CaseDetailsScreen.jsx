@@ -147,6 +147,10 @@ const CaseDetailsScreen = () => {
               navigation.navigate('Contradiction', { caseId: caseObj.id, caseTitle: caseObj.title });
             } else if (title === 'Entity Tracker') {
               navigation.navigate('EntityTracker', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Evidence Chain') {
+              navigation.navigate('EvidenceChain', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Missing Docs') {
+              navigation.navigate('MissingDocs', { caseId: caseObj.id, caseTitle: caseObj.title });
             }
           } else {
             Alert.alert(
@@ -333,13 +337,13 @@ const CaseDetailsScreen = () => {
             {renderToolItem('Timeline', '📅', true)}
             {renderToolItem('Contradictions', '⚠️', true)}
             {renderToolItem('Entity Tracker', '👥', true)}
-            {renderToolItem('Missing Docs', '📂', false)}
+            {renderToolItem('Missing Docs', '📂', true)}
             {renderToolItem('Hearing Prep', '⚡', false)}
             {renderToolItem('Opponent Predictor', '🎯', false)}
             {renderToolItem('Client Questions', '❓', false)}
             {renderToolItem('Draft Notice', '📝', false)}
             {renderToolItem('Indian Law Sections', '📖', false)}
-            {renderToolItem('Evidence Chain', '🔗', false)}
+            {renderToolItem('Evidence Chain', '🔗', true)}
           </View>
         </View>
 
