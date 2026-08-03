@@ -215,6 +215,16 @@ const useCaseStore = create()(
         }));
       },
 
+      setEntityIndex: (caseId, entityIndex) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+          c.id === caseId ?
+          { ...c, entityIndex, updatedAt: Date.now() } :
+          c
+          )
+        }));
+      },
+
       getCaseById: (id) => {
         return get().cases.find((c) => c.id === id);
       },
