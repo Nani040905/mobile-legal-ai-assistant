@@ -145,6 +145,8 @@ const CaseDetailsScreen = () => {
               navigation.navigate('Timeline', { caseId: caseObj.id, caseTitle: caseObj.title });
             } else if (title === 'Contradictions') {
               navigation.navigate('Contradiction', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Entity Tracker') {
+              navigation.navigate('EntityTracker', { caseId: caseObj.id, caseTitle: caseObj.title });
             }
           } else {
             Alert.alert(
@@ -330,7 +332,7 @@ const CaseDetailsScreen = () => {
           <View style={styles.toolGrid}>
             {renderToolItem('Timeline', '📅', true)}
             {renderToolItem('Contradictions', '⚠️', true)}
-            {renderToolItem('Entity Tracker', '👥', false)}
+            {renderToolItem('Entity Tracker', '👥', true)}
             {renderToolItem('Missing Docs', '📂', false)}
             {renderToolItem('Hearing Prep', '⚡', false)}
             {renderToolItem('Opponent Predictor', '🎯', false)}
