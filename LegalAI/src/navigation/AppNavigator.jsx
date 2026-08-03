@@ -43,6 +43,8 @@ import CaseDetailsScreen from '../screens/CaseDetailsScreen'; // Case workspace 
 import TimelineScreen from '../screens/TimelineScreen'; // Chronological timeline view
 import ContradictionScreen from '../screens/ContradictionScreen'; // Contradictions scanner view
 import EntityTrackerScreen from '../screens/EntityTrackerScreen'; // Entity tracker view
+import EvidenceChainScreen from '../screens/EvidenceChainScreen'; // Evidence chain tracker view
+import MissingDocsScreen from '../screens/MissingDocsScreen'; // Missing document detector view
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -172,6 +174,8 @@ const AppNavigator = () => {
         <Stack.Screen name="Timeline" component={TimelineScreen} />
         <Stack.Screen name="Contradiction" component={ContradictionScreen} />
         <Stack.Screen name="EntityTracker" component={EntityTrackerScreen} />
+        <Stack.Screen name="EvidenceChain" component={EvidenceChainScreen} />
+        <Stack.Screen name="MissingDocs" component={MissingDocsScreen} />
       </Stack.Navigator>
     </NavigationContainer>);
 
