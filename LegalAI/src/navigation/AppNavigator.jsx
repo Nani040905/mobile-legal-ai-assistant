@@ -48,6 +48,8 @@ import MissingDocsScreen from '../screens/MissingDocsScreen'; // Missing documen
 import HearingPrepScreen from '../screens/HearingPrepScreen'; // Hearing prep brief view
 import OpponentPredictorScreen from '../screens/OpponentPredictorScreen'; // Opponent argument predictor view
 import ClientQuestionsScreen from '../screens/ClientQuestionsScreen'; // Client questions generator view
+import DraftGeneratorScreen from '../screens/DraftGeneratorScreen'; // Draft templates generator view
+import SectionExtractorScreen from '../screens/SectionExtractorScreen'; // Indian Law section extractor view
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -182,6 +184,8 @@ const AppNavigator = () => {
         <Stack.Screen name="HearingPrep" component={HearingPrepScreen} />
         <Stack.Screen name="OpponentPredictor" component={OpponentPredictorScreen} />
         <Stack.Screen name="ClientQuestions" component={ClientQuestionsScreen} />
+        <Stack.Screen name="DraftGenerator" component={DraftGeneratorScreen} />
+        <Stack.Screen name="SectionExtractor" component={SectionExtractorScreen} />
       </Stack.Navigator>
     </NavigationContainer>);
 

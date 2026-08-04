@@ -157,6 +157,10 @@ const CaseDetailsScreen = () => {
               navigation.navigate('OpponentPredictor', { caseId: caseObj.id, caseTitle: caseObj.title });
             } else if (title === 'Client Questions') {
               navigation.navigate('ClientQuestions', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Draft Notice') {
+              navigation.navigate('DraftGenerator', { caseId: caseObj.id });
+            } else if (title === 'Indian Law Sections') {
+              navigation.navigate('SectionExtractor', { caseId: caseObj.id });
             }
           } else {
             Alert.alert(
@@ -347,8 +351,8 @@ const CaseDetailsScreen = () => {
             {renderToolItem('Hearing Prep', '⚡', true)}
             {renderToolItem('Opponent Predictor', '🎯', true)}
             {renderToolItem('Client Questions', '❓', true)}
-            {renderToolItem('Draft Notice', '📝', false)}
-            {renderToolItem('Indian Law Sections', '📖', false)}
+            {renderToolItem('Draft Notice', '📝', true)}
+            {renderToolItem('Indian Law Sections', '📖', true)}
             {renderToolItem('Evidence Chain', '🔗', true)}
           </View>
         </View>
