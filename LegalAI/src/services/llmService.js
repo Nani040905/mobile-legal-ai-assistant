@@ -24,6 +24,7 @@
 
 /* Import the model manager singleton to access the loaded LLM context */
 import modelManager from './modelManager';
+import { recordInference } from './telemetry';
 import { buildBudgetedContext } from './contextBudget';
 import { splitIntoChunks } from './pdfService';
 import { PERSPECTIVE_FOCUS } from '../types/legalPerspective';
@@ -158,6 +159,7 @@ caseType = 'unknown') =>
     });
 
     await context.clearCache();
+    const startTime = Date.now();
     const result = await context.completion(
       {
         messages: chatMLMessages,
@@ -169,6 +171,9 @@ caseType = 'unknown') =>
       },
       onToken // Pass through the streaming callback
     );
+    const duration = Date.now() - startTime;
+    const tokens = result.tokens_generated || Math.round(result.text.length / 4);
+    recordInference(tokens, duration);
 
     /* Return the complete generated text */
     return result.text.trim();
