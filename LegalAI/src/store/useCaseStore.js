@@ -245,6 +245,36 @@ const useCaseStore = create()(
         }));
       },
 
+      setHearingBrief: (caseId, report) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+          c.id === caseId ?
+          { ...c, hearingBrief: report, updatedAt: Date.now() } :
+          c
+          )
+        }));
+      },
+
+      setOpponentPrediction: (caseId, report) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+          c.id === caseId ?
+          { ...c, opponentPrediction: report, updatedAt: Date.now() } :
+          c
+          )
+        }));
+      },
+
+      setClientQuestions: (caseId, report) => {
+        set((state) => ({
+          cases: state.cases.map((c) =>
+          c.id === caseId ?
+          { ...c, clientQuestions: report, updatedAt: Date.now() } :
+          c
+          )
+        }));
+      },
+
       getCaseById: (id) => {
         return get().cases.find((c) => c.id === id);
       },

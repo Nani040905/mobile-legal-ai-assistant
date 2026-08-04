@@ -45,6 +45,9 @@ import ContradictionScreen from '../screens/ContradictionScreen'; // Contradicti
 import EntityTrackerScreen from '../screens/EntityTrackerScreen'; // Entity tracker view
 import EvidenceChainScreen from '../screens/EvidenceChainScreen'; // Evidence chain tracker view
 import MissingDocsScreen from '../screens/MissingDocsScreen'; // Missing document detector view
+import HearingPrepScreen from '../screens/HearingPrepScreen'; // Hearing prep brief view
+import OpponentPredictorScreen from '../screens/OpponentPredictorScreen'; // Opponent argument predictor view
+import ClientQuestionsScreen from '../screens/ClientQuestionsScreen'; // Client questions generator view
 
 /* Import theme colors so we can style the navigator's background */
 import { COLORS } from '../utils/theme';
@@ -176,6 +179,9 @@ const AppNavigator = () => {
         <Stack.Screen name="EntityTracker" component={EntityTrackerScreen} />
         <Stack.Screen name="EvidenceChain" component={EvidenceChainScreen} />
         <Stack.Screen name="MissingDocs" component={MissingDocsScreen} />
+        <Stack.Screen name="HearingPrep" component={HearingPrepScreen} />
+        <Stack.Screen name="OpponentPredictor" component={OpponentPredictorScreen} />
+        <Stack.Screen name="ClientQuestions" component={ClientQuestionsScreen} />
       </Stack.Navigator>
     </NavigationContainer>);
 
