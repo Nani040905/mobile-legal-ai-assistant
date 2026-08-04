@@ -1,235 +1,225 @@
-# Document Processing Strategy
+# Document Processing Pipeline
 
-## Problem
-
-Large legal documents can exceed the model context window.
-
-Examples:
-
-- 50 page agreement
-- 100 page case file
-- 200 page legal notice collection
-
-Sending the entire document to the model is not practical. Qwen 2.5 3B has a 2048-token context window configured (n_ctx), which is approximately 8,000 characters.
+> **Branch:** `javascript`
 
 ---
 
-## Processing Pipeline Overview
+## Overview
 
-```mermaid
-flowchart LR
-    A["📄 PDF File"] --> B["PdfExtractor\n(Native Module)"]
-    B --> C["Raw Text"]
-    C --> D["Text Cleaner\n(Planned)"]
-    D --> E["Chunking\n(1000 chars)"]
-    E --> F["Chunk Storage\n(AsyncStorage)"]
-    F --> G{"User Action"}
-    G -->|"Summarize"| H["Summary Pipeline"]
-    G -->|"Ask Question"| I["RAG Pipeline"]
-    G -->|"Audit"| J["Risk & Evidence Pipeline"]
-    G -->|"Strategy"| K["Strategy Pipeline"]
-    G -->|"Compare"| L["Comparison Pipeline"]
-    G -->|"Timeline"| M["Timeline Pipeline"]
+Document processing converts raw PDF/DOCX/TXT files into indexed, searchable, AI-queryable chunks — entirely offline.
+
+```
+File picked by user (PDF / DOCX / TXT)
+        ↓
+PdfExtractorModule.kt  (Native Kotlin + Apache PDFBox)
+        ↓
+cleanPdfText()  (textCleaner.js — JS normalization)
+        ↓
+splitIntoChunks()  (pdfService.js — paragraph-aware splitting)
+        ↓
+Chunks stored in useDocumentStore
+        ↓
+BM25 retrieval index built on demand (retrievalService.js)
 ```
 
 ---
 
-## Upload Pipeline
+## Step 1: File Selection
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Picker as DocumentPicker
-    participant Native as PdfExtractor (Kotlin)
-    participant Service as pdfService
-    participant Store as useDocumentStore
+**Component:** `@react-native-documents/picker` v12.0.1
 
-    User->>Picker: Select PDF
-    Picker-->>Native: File URI (local copy)
-    Native->>Native: PDFBox: Load & parse PDF
-    Native-->>Service: Raw text string
-    Service->>Service: splitIntoChunks(text, 1000)
-    Note over Service: Smart break points:<br/>1. Paragraph (\\n\\n)<br/>2. Line (\\n)<br/>3. Sentence (. )<br/>4. Hard limit
-    Service-->>Store: Document + Chunks[]
-    Store->>Store: Persist to AsyncStorage
-```
-
-### Chunking Strategy
-
-```mermaid
-flowchart TD
-    A["Full Document Text"] --> B{"Length > 1000 chars?"}
-    B -->|No| C["Return as single chunk"]
-    B -->|Yes| D["Extract 1000-char candidate"]
-    D --> E{"Paragraph break\nin last 50%?"}
-    E -->|Yes| F["Break at \\n\\n"]
-    E -->|No| G{"Line break\nin last 50%?"}
-    G -->|Yes| H["Break at \\n"]
-    G -->|No| I{"Sentence end\nin last 50%?"}
-    I -->|Yes| J["Break at '. '"]
-    I -->|No| K["Hard break at 1000"]
-    F --> L["Add chunk to array"]
-    H --> L
-    J --> L
-    K --> L
-    L --> M{"More text remaining?"}
-    M -->|Yes| D
-    M -->|No| N["Return all chunks"]
-```
+- Opens native Android file picker dialog
+- Supports: `.pdf`, `.docx`, `.txt`
+- Returns: `{ uri, name, size, type }` object
+- File is copied to app's internal storage before processing
 
 ---
 
-## Summarization Pipeline
+## Step 2: Text Extraction (Native Kotlin Module)
 
-### Current Implementation
+**File:** `android/app/src/main/java/com/legalai/modules/PdfExtractorModule.kt`
 
-```mermaid
-flowchart LR
-    A["Document Text"] --> B["Truncate to\n3000 chars"]
-    B --> C["System Prompt:\nSummarize this legal doc"]
-    C --> D["LLM Inference\n(n_predict: 256)"]
-    D --> E["Summary\n(10-15 lines)"]
+The native module bridges from JavaScript to Kotlin using React Native's bridge (`NativeModules`):
 
-    style E fill:#ff9800,color:#000
+```javascript
+// JavaScript side (pdfService.js)
+const { PdfExtractor } = NativeModules;
+const text = await PdfExtractor.extractText(fileUri);      // PDF
+const text = await PdfExtractor.extractDocxText(fileUri);  // DOCX
+const text = await PdfExtractor.extractTxtText(fileUri);   // TXT
 ```
 
-### Known Issues
+**Kotlin side (PdfExtractorModule.kt):**
+- Uses **Apache PDFBox Android** (`com.tom-roush:pdfbox-android:2.0.27.0`)
+- Opens file from filesystem path
+- Iterates all pages, strips rendering artifacts
+- Returns plain UTF-8 text string via Promise resolution
 
-- Only 10–15 lines of summary generated (token limit too low)
-- Raw markdown/PDF formatting artifacts in output
-- Large documents lose content beyond 3,000 characters
-
-### Planned Fix (Phase 8 Part 3)
-
-```mermaid
-flowchart LR
-    A["Document Text"] --> B["cleanPdfText()\nStrip artifacts"]
-    B --> C["Context Budget\nManager"]
-    C --> D["System Prompt:\nSummarize in plain text"]
-    D --> E["LLM Inference\n(n_predict: 768)"]
-    E --> F["Full Summary\n(30+ lines)"]
-
-    style F fill:#4caf50,color:#fff
-```
-
-Future: Map-Reduce summarization:
-
-```mermaid
-flowchart TD
-    A["Chunk 1"] --> S1["Summary 1"]
-    B["Chunk 2"] --> S2["Summary 2"]
-    C["Chunk 3"] --> S3["Summary 3"]
-    D["Chunk N"] --> SN["Summary N"]
-    S1 --> COMBINE["Combine All Summaries"]
-    S2 --> COMBINE
-    S3 --> COMBINE
-    SN --> COMBINE
-    COMBINE --> FINAL["Final Summary\n(LLM pass)"]
-```
+**Fallback behavior:**
+- On iOS or during testing when native module is unavailable → uses simulated legal contract text stub
+- Logs warning: `[PdfService] PdfExtractor native module is not available. Falling back to stub.`
 
 ---
 
-## Question Answering Pipeline (RAG)
+## Step 3: Text Cleaning
 
-### BM25 Retrieval Algorithm
+**File:** `src/utils/textCleaner.js`
 
-```mermaid
-flowchart TD
-    A["User Question"] --> B["tokenize(query)\nLowercase, remove stops"]
-    B --> C["For each query term:\nCompute IDF"]
-    C --> D["For each chunk:\nBM25 score = Σ IDF × TF-saturation"]
-    D --> E["Sort chunks by score\n(descending)"]
-    E --> F["Filter score > 0"]
-    F --> G["Return Top K chunks"]
+`cleanPdfText(rawText)` normalizes PDF extraction artifacts:
 
-    subgraph BM25["BM25 Formula"]
-        H["score = IDF × f(k1+1) / f+k1×(1-b+b×docLen/avgLen)"]
-        I["k1=1.5  b=0.75"]
-    end
+- Collapse excessive whitespace (3+ spaces → single space)
+- Normalize line endings (`\r\n` → `\n`)
+- Remove null bytes and control characters
+- Strip repeated blank lines (3+ → 2)
+- Trim leading/trailing whitespace
+
+---
+
+## Step 4: Chunk Splitting
+
+**File:** `src/services/pdfService.js → splitIntoChunks(text, chunkSize=1000)`
+
+**Why chunk?**
+- Legal documents: 50–200 pages → 100K+ characters
+- LLM context window: 2048 tokens ≈ ~8000 characters
+- We can only send the most relevant parts to the model
+
+**Chunk size:** 1000 characters (~200–250 tokens — safe headroom within context limits)
+
+**Splitting algorithm:**
+```
+For each chunk window:
+1. Take up to 1000 characters
+2. If NOT at end of document:
+   a. Look for \n\n (paragraph break) in last 50% of chunk → split there
+   b. Else look for \n (line break) in last 50% → split there
+   c. Else look for '. ' (sentence end) in last 50% → split there
+   d. Else: hard-split at 1000 chars
+3. Trim whitespace from chunk edges
+4. Advance position past processed chars and skip leading newlines
 ```
 
-### Full RAG Flow
+**Result:** Natural chunk boundaries that don't cut sentences mid-word.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant BM25 as retrievalService
-    participant Budget as contextBudget (Planned)
-    participant LLM as llmService
-    participant Model as llama.rn
+---
 
-    User->>BM25: Question + Document Chunks
-    BM25->>BM25: Tokenize query
-    BM25->>BM25: Compute IDF scores
-    BM25->>BM25: Score all chunks
-    BM25-->>Budget: Top K ScoredChunks
+## Step 5: Storage
 
-    Budget->>Budget: estimateTokens(systemPrompt)
-    Budget->>Budget: estimateTokens(question)
-    loop Add chunks until budget full
-        Budget->>Budget: estimateTokens(nextChunk)
-        Budget->>Budget: Check total < 1800
-    end
-    Budget-->>LLM: Budgeted prompt
+**Store:** `useDocumentStore` (Zustand + secureStorage persistence)
 
-    LLM->>Model: completion(system + context + question)
-    Model-->>User: Streamed answer
+Each document is stored as:
+
+```javascript
+{
+  id: 'doc_' + Date.now(),
+  name: 'EmploymentAgreement.pdf',
+  uri: '/storage/emulated/0/Documents/EmploymentAgreement.pdf',
+  size: 45678,           // bytes
+  importedAt: 1722789000000,
+  wordCount: 2340,
+  text: '...',           // full raw text (100K+ chars possible)
+  chunks: [              // pre-split array
+    'EMPLOYMENT AGREEMENT\n\nThis Agreement is made and entered...',
+    'Section 3. Compensation. Employee shall receive...',
+    // ...
+  ]
+}
 ```
 
----
-
-## Legal Audit Pipeline (Risk & Evidence)
-
-### Risk Analysis
-
-1. Scans document chunks contextually.
-2. Identifies high-risk, medium-risk, and missing standard clauses based on `CaseType` and `LegalPerspective`.
-3. Produces a Risk Confidence Score and specific questions to ask an attorney.
-
-### Evidence Extractor
-
-1. Identifies and categorizes evidentiary references within the text.
-2. Classifies evidence into:
-   - **Strong Evidence**: Signed documents, formal correspondence, timestamps.
-   - **Weak Evidence**: Verbal assertions, unsigned annexures.
-   - **Missing Evidence**: Items referred to but not included.
+Documents persist across app restarts via AES-256 encrypted AsyncStorage.
 
 ---
 
-## Legal Strategy Pipeline
+## Step 6: BM25 Retrieval (On Demand)
 
-### SWOT Generator
+**File:** `src/services/retrievalService.js`
 
-1. Uses `strategyGenerator.ts` to build context.
-2. Maps document text into:
-   - **Strengths**: Strong claims, clear evidence.
-   - **Weaknesses**: Missing clauses, poor formatting, contradictions.
-   - **Opportunities**: Legal loopholes, missing opponent evidence.
-   - **Threats**: Approaching deadlines, jurisdictional issues.
-3. Compiles Legal Arguments and actionable Next Steps.
+When a user asks a question about a document, chunks are ranked by relevance:
 
-## Timeline Pipeline
+```javascript
+// API
+import { rankChunks } from './retrievalService';
 
-### Multi-Document Extraction
+const rankedChunks = rankChunks(
+  query,          // user's question string
+  document.chunks // all chunks from the document
+);
+// Returns: [{ chunk: string, score: number }, ...] sorted by score descending
+```
 
-1. Receives multiple document chunks from a `CaseFolder`.
-2. Scans every chunk iteratively via `timelineGenerator.ts`.
-3. Prompts the LLM to extract dates, events, and assigning a Confidence (High/Medium/Low).
-4. Clears native cache (`context.clearCache()`) between chunks to enable large-scale processing.
+**Internal flow:**
 
-### Event Normalization & Sorting
+```
+tokenize(query) → ['employment', 'termination', 'notice']  (stop words removed)
+        ↓
+For each chunk:
+  tokenize(chunk) → term frequency map
+  computeIDF(term) = log((N - df + 0.5) / (df + 0.5) + 1)
+  BM25_score = Σ IDF(t) × [freq(t,D) × (k1+1)] / [freq(t,D) + k1 × (1 - b + b × |D|/avgdl)]
+        ↓
+Sort chunks by BM25 score descending
+        ↓
+Return top-K chunks (default k=3)
+```
 
-1. Normalizes varied text dates (e.g., "Jan 12 2026", "12/01/2026") into numeric timestamps (`dateValue`).
-2. Deduplicates similar events based on text overlap and date.
-3. Sorts events strictly chronologically, placing unparseable dates at the bottom or top depending on the view.
+**Parameters:** K1=1.5, B=0.75 (Okapi BM25 standard defaults)
 
 ---
 
-## Benefits
+## Step 7: Context Budget Assembly
 
-- Faster — only relevant chunks sent to LLM for RAG
-- Deep Analysis — chunk-by-chunk iteration for Audit and Strategy
-- Lower memory usage — small context window managed dynamically via KV cache clearing (`context.clearCache()`)
-- Works with large PDFs — no document size limit
-- Fully offline — no internet required
-- Deterministic retrieval — same query always returns same chunks
+**File:** `src/services/contextBudget.js → buildBudgetedContext()`
+
+Before sending chunks to the LLM, the token budget manager ensures the total prompt fits within the model's context window:
+
+```javascript
+buildBudgetedContext(
+  systemPrompt,         // system message text
+  rankedChunks,         // sorted array of chunk strings
+  userQuestion,         // the user's question
+  maxContextTokens,     // 1800 (leaves headroom for system + question overhead)
+  reservedOutputTokens  // 512 (reserved for the model's answer)
+)
+
+// Returns:
+{
+  contextText: string,   // joined chunks that fit within budget
+  droppedCount: number,  // how many chunks were too large to include
+  estimatedTokens: number
+}
+```
+
+**Token estimation:** `chars / 4` (rough approximation — 1 token ≈ 4 English characters)
+
+**Strategy:** Greedy fill — add chunks in rank order until budget is exhausted.
+
+---
+
+## Supported File Types
+
+| Format | Extraction Method | Notes |
+|---|---|---|
+| `.pdf` | PDFBox Android | Native Kotlin module, handles text-layer PDFs |
+| `.docx` | PDFBox Android | Microsoft Word format (basic text extraction) |
+| `.txt` | Direct RNFS read | Instant — no parsing needed |
+| Scanned PDF | ❌ Not supported | OCR deferred to future phase |
+| `.doc` (old Word) | ❌ Not supported | Legacy format excluded |
+
+---
+
+## Benchmark Documents
+
+The `evaluation/benchmarkDocuments/` directory contains **54 real Indian legal document samples** covering:
+
+| Document Type | Examples |
+|---|---|
+| Criminal | FirstInformationReport, ChargeSheet, BailApplication, WritPetition |
+| Civil | PlaintCivilSuit, WrittenStatementDefense, InjunctionApplication |
+| Contract | EmploymentAgreement, NDAAgreement, LoanAgreement, SaaSAgreement |
+| Property | SaleDeedProperty, RentalAgreement, MortgageDeed, GiftDeed |
+| Corporate | ShareholdersAgreement, JointVentureAgreement, PartnershipDeed |
+| IP | PatentLicenseAgreement, SoftwareLicenseAgreement, TrademarkAssignment |
+| Consumer/RTI | ConsumerComplaint, RTIRequest, MedicalMalpracticeComplaint |
+| Misc | WillAndTestament, PowerOfAttorney, Affidavit, IndemnityBond |
+
+These documents power the `BenchmarkScreen` and `evaluation/retrievalBenchmark.js` recall evaluator.

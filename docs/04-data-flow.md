@@ -1,427 +1,319 @@
-# Data Flow
+# Data Flow & Service Architecture
 
-## High-Level Data Flow Overview
+> **Branch:** `javascript`
 
-```mermaid
-graph TB
-    subgraph Input["User Input"]
-        Q["Question"]
-        PDF["PDF Upload"]
-    end
+---
 
-    subgraph Processing["Processing Layer"]
-        PE["PdfExtractor (Native)"]
-        CHUNK["Chunking (pdfService)"]
-        BM25["BM25 Retrieval"]
-        CB["Context Budget (Planned)"]
-        CLEAN["Text Cleaner (Planned)"]
-    end
+## 1. RAG Pipeline (Ask Document)
 
-    subgraph AI["AI Inference"]
-        LLM["llmService"]
-        MM["modelManager"]
-        LLAMA["llama.rn Context"]
-    end
+The core value of the app — answering questions about uploaded PDFs using local LLM.
 
-    subgraph Output["Output"]
-        ANS["Answer"]
-        SUM["Summary"]
-        CIT["Citations (Planned)"]
-        RISK["Risk Report"]
-        STRAT["Strategy"]
-        COMPARE["Comparison"]
-        TIMELINE["Timeline"]
-    end
-
-    PDF --> PE --> CLEAN --> CHUNK
-    Q --> BM25
-    CHUNK --> BM25
-    BM25 --> CB --> LLM
-    LLM --> MM --> LLAMA
-    LLAMA --> ANS
-    LLAMA --> SUM
-    ANS --> CIT
-    CHUNK --> RISK
-    CHUNK --> STRAT
-    CHUNK --> COMPARE
-    CHUNK --> TIMELINE
+```
+User enters question in DocumentDetailsScreen
+               ↓
+retrievalService.rankChunks(query, allChunks)
+   ┌─────────────────────────────────────────┐
+   │  BM25 Algorithm                          │
+   │  1. tokenize(query) → remove stop words │
+   │  2. tokenize(chunk) → build term freq.  │
+   │  3. computeIDF(term, allChunks)          │
+   │  4. score = Σ IDF * TF-saturated        │
+   │     k1=1.5, b=0.75 (standard defaults)  │
+   └─────────────────────────────────────────┘
+               ↓
+Top-K ranked chunks (default k=3)
+               ↓
+contextBudget.buildBudgetedContext(
+   systemPrompt,
+   rankedChunks,
+   question,
+   maxContextTokens=1800,
+   reservedOutputTokens=512
+)
+   ┌──────────────────────────────────────────┐
+   │  Token Budget Manager                     │
+   │  1. Estimate tokens: chars / 4           │
+   │  2. Fill chunks greedily until budget hit │
+   │  3. Return: contextText, droppedCount    │
+   └──────────────────────────────────────────┘
+               ↓
+llmService.answerQuestion(question, budgetedContext, onToken)
+   ┌──────────────────────────────────────────┐
+   │  LLM Inference (llama.rn)                │
+   │  Model: Qwen 2.5 3B (or selected model) │
+   │  n_predict: 1024 tokens                  │
+   │  temperature: 0.3 (factual accuracy)     │
+   │  top_p: 0.9, top_k: 40                  │
+   │  stop: ['<|im_end|>', '<|endoftext|>']  │
+   └──────────────────────────────────────────┘
+               ↓
+Streaming tokens → onToken() → UI updates in real-time
+               ↓
+telemetry.recordInference(tokensGenerated, durationMs)
+               ↓
+Final answer stored in component state + displayed with citation panel
 ```
 
 ---
 
-## Chat Flow
+## 2. Document Upload & Processing Pipeline
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant ChatScreen
-    participant useChatStore
-    participant llmService
-    participant modelManager
-    participant llama.rn
-
-    User->>ChatScreen: Types question
-    ChatScreen->>useChatStore: sendMessage(text)
-    useChatStore->>useChatStore: Add user message
-    useChatStore->>llmService: generateResponse(prompt)
-    llmService->>modelManager: getContext()
-    modelManager-->>llmService: LlamaContext
-
-    llmService->>llama.rn: context.completion(messages, params)
-
-    loop Token Streaming
-        llama.rn-->>llmService: { token: "..." }
-        llmService-->>useChatStore: onToken callback
-        useChatStore-->>ChatScreen: Update AI message
-        ChatScreen-->>User: Real-time typing
-    end
-
-    llama.rn-->>llmService: Complete result
-    llmService-->>useChatStore: Final text
-    useChatStore->>useChatStore: Finalize message
+```
+User picks PDF via DocumentPicker
+               ↓
+useDocumentStore.importDocument(file)
+               ↓
+pdfService.extractText(filePath) [React Native bridge]
+   ┌──────────────────────────────────────────────────────┐
+   │  PdfExtractorModule.kt (Native Kotlin)               │
+   │  1. Reads file from device filesystem                │
+   │  2. Passes to Apache PDFBox (Android port)          │
+   │  3. Extracts raw text from all pages                 │
+   │  4. Returns plain string via React Native Bridge     │
+   └──────────────────────────────────────────────────────┘
+               ↓
+textCleaner.cleanText(rawText)
+   - Remove excessive whitespace, control chars
+   - Normalize line endings
+   - Strip headers/footers heuristically
+               ↓
+pdfService.splitIntoChunks(cleanedText, chunkSize=1000)
+   - Split on paragraph boundaries first
+   - Fall back to character count split
+   - Each chunk labeled [Chunk 1], [Chunk 2]...
+               ↓
+Document object stored in useDocumentStore:
+{
+  id: string,
+  name: string,
+  uri: string,
+  size: number,
+  importedAt: number,
+  wordCount: number,
+  text: string,          // full extracted text
+  chunks: string[]       // pre-split chunks
+}
+               ↓
+Persisted to AES-256 encrypted AsyncStorage via secureStorage
 ```
 
 ---
 
-## PDF Upload Flow
+## 3. Model Lifecycle
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant DocScreen as DocumentsScreen
-    participant Picker as DocumentPicker
-    participant PdfExtractor as Native PdfExtractor
-    participant pdfService
-    participant docStore as useDocumentStore
-    participant AsyncStorage
+```
+App startup
+   ↓
+modelManager.checkModelFile(activeModelId)
+   ↓ model file exists?
+   ├─ YES → status: 'idle'
+   └─ NO  → status: 'not_downloaded'
 
-    User->>DocScreen: Taps "Upload PDF"
-    DocScreen->>Picker: pick({ type: pdf, keepLocalCopy: true })
-    Picker-->>DocScreen: { uri, name, size }
-    DocScreen->>PdfExtractor: extractText(uri)
-    PdfExtractor->>PdfExtractor: PDFBox parsing
-    PdfExtractor-->>DocScreen: Raw text string
-    DocScreen->>pdfService: splitIntoChunks(text, 1000)
-    pdfService-->>DocScreen: string[] chunks
-    DocScreen->>docStore: addDocument({ name, uri, text, chunks, size })
-    docStore->>AsyncStorage: Persist document data
-    docStore-->>DocScreen: Updated document list
+User taps "Load Model"
+   ↓
+modelManager.initializeModel(modelId)
+   ↓ status: 'loading'
+   ↓
+initLlama({
+  model: '/path/to/model.gguf',
+  n_ctx: 2048,
+  n_gpu_layers: 0,      // CPU only — GPU crashes Adreno
+  use_mlock: true,      // Prevent memory paging
+})
+   ↓ status: 'ready' | 'error'
+   ↓
+context stored in modelContext singleton
+
+User taps "Unload Model"
+   ↓
+modelManager.releaseModel()
+   ↓ context.release()
+   ↓ status: 'idle'
+
+Crash during inference
+   ↓
+modelManager.handleCrash(error)
+   ↓ try: context.release() safely
+   ↓ status: 'error'
+   ↓ UI shows "model crashed — reload in Settings"
 ```
 
 ---
 
-## PDF Question Answering Flow (RAG)
+## 4. Zustand State Stores
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant DDS as DocumentDetailsScreen
-    participant retrieval as retrievalService
-    participant llmService
-    participant modelManager
-    participant llama.rn
+### `useCaseStore`
 
-    User->>DDS: Enters question
-    DDS->>retrieval: search(query, chunks, topK=3)
+Manages all case folder records. Persisted with `secureStorage` JSON adapter.
 
-    Note over retrieval: BM25 Algorithm
-    retrieval->>retrieval: tokenize(query)
-    retrieval->>retrieval: Compute IDF per term
-    retrieval->>retrieval: Score each chunk
-    retrieval->>retrieval: Sort by score descending
-
-    retrieval-->>DDS: ScoredChunk[] (top 3)
-    DDS->>retrieval: getRelevantContext(query, chunks)
-    retrieval-->>DDS: "[Chunk 5]:\n...\n---\n[Chunk 12]:\n..."
-
-    DDS->>llmService: answerQuestion(question, context)
-    llmService->>modelManager: getContext()
-    modelManager-->>llmService: LlamaContext
-    llmService->>llama.rn: completion(system + context + question)
-
-    loop Token Streaming
-        llama.rn-->>DDS: Tokens
-    end
-    llama.rn-->>DDS: Final answer
-    DDS-->>User: Display answer with chunk references
 ```
+CaseFolder {
+  id: string                // timestamp + random hex
+  name: string              // case title
+  clientName: string
+  caseType: string          // 'criminal' | 'civil' | 'contract' | ...
+  description: string
+  status: string            // 'Active' | 'Closed' | 'On Hold'
+  documents: string[]       // array of document IDs
+  tags: string[]            // custom tags
+  notes: { id, text, createdAt }[]
+  nextHearingDate: string?
+  createdAt: number
+  updatedAt: number
+  // Cached AI reports (set once, re-used):
+  timelineEvents: object?
+  contradictionReport: object?
+  entityIndex: object?
+  evidenceChainReport: object?
+  missingDocsReport: object?
+  hearingBrief: object?
+  opponentPrediction: object?
+  clientQuestions: object?
+}
+```
+
+Actions: `addCase`, `updateCase`, `deleteCase`, `addDocumentToCase`, `removeDocumentFromCase`, `addCaseNote`, `deleteCaseNote`, `toggleCaseTag`, `setCaseStatus`, `setNextHearingDate`, `setTimeline`, `setContradictionReport`, `setEntityIndex`, `setEvidenceChainReport`, `setMissingDocsReport`, `setHearingBrief`, `setOpponentPrediction`, `setClientQuestions`, `clearAllCases`
+
+### `useChatStore`
+
+Manages all chat message histories, one thread per `caseId`. Persisted with `secureStorage`.
+
+```
+ChatThread {
+  caseId: string
+  messages: {
+    id: string
+    role: 'user' | 'assistant'
+    content: string
+    timestamp: number
+    perspective: string
+    caseType: string
+  }[]
+}
+```
+
+Actions: `addMessage`, `clearHistory(caseId)`, `clearAll`, `getHistory(caseId)`
+
+### `useDocumentStore`
+
+Manages all uploaded PDF documents and their extracted text. Persisted with `secureStorage`.
+
+```
+Document {
+  id: string
+  name: string
+  uri: string
+  size: number
+  importedAt: number
+  wordCount: number
+  text: string         // full extracted text (~unlimited)
+  chunks: string[]     // pre-chunked (1000 chars each)
+}
+```
+
+Actions: `addDocument`, `deleteDocument`, `getDocumentById`, `clearAll`
 
 ---
 
-## Model Lifecycle Flow
+## 5. LLM Prompt Construction
 
-```mermaid
-stateDiagram-v2
-    [*] --> CheckPreference: App Startup
-    CheckPreference --> NotDownloaded: File not found
-    CheckPreference --> Idle: File exists
-    CheckPreference --> AutoLoad: File exists + shouldLoad=true
+All prompts use **Qwen 2.5 ChatML format**:
 
-    NotDownloaded --> Downloading: User taps Download
-    Downloading --> Idle: HTTP 200 Complete
-    Downloading --> NotDownloaded: User cancels
-    Downloading --> Error: Network failure
-
-    Idle --> Loading: User taps Load / AutoLoad
-    AutoLoad --> Loading: Automatic
-    Loading --> Ready: initLlama() succeeds
-    Loading --> Error: initLlama() fails
-
-    Ready --> Generating: completion() called
-    Generating --> Ready: completion() done
-    Generating --> Error: Runtime crash
-
-    Ready --> Idle: User taps Unload
-    Ready --> Idle: Model switch
-
-    Error --> Idle: Release + retry
-    Error --> Loading: User taps Reload
 ```
+<|im_start|>system
+You are a helpful legal AI assistant specialized in Indian Law...
+
+Active Perspective: DEFENSE
+Active Case Type: CRIMINAL
+
+Focus on:
+- Constitutional rights under Article 21
+- Bail provisions under BNSS
+...
+<|im_end|>
+<|im_start|>user
+[Prior conversation history injected here]
+...
+[Current user message]
+<|im_end|>
+<|im_start|>assistant
+```
+
+**Perspective + CaseType prefix** is generated by `getPerspectiveCaseTypePromptPrefix()` from `legalPerspective.js` and `caseType.js` type definitions.
+
+### LLM inference parameters by task:
+
+| Task | n_predict | temperature | Use |
+|---|---|---|---|
+| Chat (general) | 1024 | 0.7 | Conversational, moderate creativity |
+| Summarize document | 2048 | 0.3 | Factual, structured |
+| Answer question (RAG) | 1024 | 0.3 | Factual, grounded in context |
+| Risk analysis | 1024 | 0.4 | Analytical |
+| Strategy / Hearing Prep | 1024 | 0.5 | Balanced |
+| Draft generation | 2048 | 0.5 | Template-following |
+| Timeline / Entities | 1024 | 0.2 | Highly structured JSON output |
+| Contradiction detection | 1024 | 0.2 | Deterministic JSON output |
 
 ---
 
-## Model Download Flow
+## 6. BM25 Retrieval Engine Details
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Settings as SettingsScreen
-    participant MM as modelManager
-    participant RNFS as react-native-fs
-    participant HF as Hugging Face CDN
+`retrievalService.js` — zero external dependencies, pure JavaScript.
 
-    User->>Settings: Taps "Download Model"
-    Settings->>MM: downloadModel()
-    MM->>MM: Set status: DOWNLOADING
-    MM->>RNFS: downloadFile({ fromUrl, toFile, progress })
-    RNFS->>HF: HTTP GET (GGUF file)
+**Algorithm:** BM25 Okapi
 
-    loop Progress Updates (every 500ms)
-        HF-->>RNFS: Bytes chunk
-        RNFS-->>MM: { bytesWritten, contentLength }
-        MM->>MM: Calculate percentage
-        MM-->>Settings: progressListeners notify
-        Settings-->>User: Update progress bar
-    end
-
-    HF-->>RNFS: Download complete
-    RNFS-->>MM: statusCode: 200
-    MM->>MM: Set status: IDLE
-    MM-->>Settings: Status listener notify
-    Settings-->>User: "Download complete"
 ```
+score(D, Q) = Σ_i IDF(q_i) × [f(q_i, D) × (k1 + 1)] / [f(q_i, D) + k1 × (1 - b + b × |D|/avgdl)]
+```
+
+**Parameters:**
+- `K1 = 1.5` — Term frequency saturation (standard default)
+- `B = 0.75` — Document length normalization (standard default)
+
+**Stop words removed from both query and chunks:**
+- Articles: `a`, `an`, `the`
+- Prepositions: `in`, `on`, `at`, `to`, `for`, `of`, `with`, `by`, `from`, `as`
+- Conjunctions: `and`, `or`, `but`, `nor`, `so`, `yet`
+- Common verbs: `is`, `am`, `are`, `was`, `were`, `have`, `has`, `had`, `do`, `does`, `did`, etc.
+
+**Why BM25 over vector embeddings?**
+- Saves ~500 MB RAM (no embedding model needed)
+- Instant scoring — no neural network forward pass
+- Legal text relies on exact terminology (`indemnification`, `force majeure`) where keyword matching outperforms semantic similarity
+- Deterministic and explainable results
 
 ---
 
-## Model Switching Flow
+## 7. Encrypted Storage
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Settings as SettingsScreen
-    participant MM as modelManager
-    participant AsyncStorage
+`secureStorage.js` wraps `AsyncStorage` with AES-256 encryption via `crypto-js`.
 
-    User->>Settings: Selects different model
-    Settings->>MM: setActiveModel(modelId)
+```javascript
+// All Zustand persist adapters use secureStorage instead of AsyncStorage directly
+storage: createJSONStorage(() => secureStorage)
 
-    alt Model is currently loaded
-        MM->>MM: releaseModel()
-        MM->>MM: modelContext = null
-        MM->>AsyncStorage: shouldLoad = false
-    end
-
-    MM->>MM: activeModel = newModel
-    MM->>AsyncStorage: Save active model ID
-    MM->>MM: checkModelExists()
-
-    alt File exists
-        MM->>MM: Set status: IDLE
-    else File not found
-        MM->>MM: Set status: NOT_DOWNLOADED
-    end
-
-    MM-->>Settings: Status listener notify
-    Settings-->>User: Updated UI
+// secureStorage API matches AsyncStorage:
+secureStorage.getItem(key)   // → decrypt(AES256) → JSON.parse()
+secureStorage.setItem(key, value)  // → JSON.stringify() → AES256 encrypt
+secureStorage.removeItem(key)
 ```
+
+When encryption is toggled OFF in settings, raw JSON is stored directly.
 
 ---
 
-## Crash Recovery Flow (Phase 8 — Planned)
+## 8. Telemetry
 
-```mermaid
-flowchart TD
-    A["Inference or Loading Fails"] --> B["Exception caught in try/catch"]
-    B --> C["Release context: modelContext = null"]
-    C --> D["Free memory resources"]
-    D --> E["Set status: ERROR"]
-    E --> F["Store error message"]
-    F --> G{"User action?"}
-    G -->|"Tap Reload"| H["initializeModel()"]
-    G -->|"Switch Model"| I["setActiveModel()"]
-    H --> J{"Load succeeds?"}
-    J -->|Yes| K["Status: READY"]
-    J -->|No| E
-    I --> L["Status: IDLE / NOT_DOWNLOADED"]
+`telemetry.js` tracks inference performance in memory (not persisted).
 
-    style A fill:#f44336,color:#fff
-    style E fill:#ff9800,color:#000
-    style K fill:#4caf50,color:#fff
+```javascript
+recordInference(tokensGenerated, durationMs)
+// → averageTokensPerSecond = totalTokens / totalDurationMs * 1000
+// → averageLatencyMs = totalDurationMs / inferenceCount
+
+recordModelLoad(durationMs)  // tracked separately
+
+getTelemetryReport()  // → { inferenceCount, avgTps, avgLatency, modelLoadTime }
 ```
 
----
-
-## Hallucination Verification Flow (Phase 8.6 — Planned)
-
-```mermaid
-flowchart TD
-    A["Generated Answer"] --> B["Extract key claims/entities"]
-    B --> C["Cross-reference against source chunks"]
-    C --> D{"Token overlap score"}
-    D -->|"> 0.5"| E["✅ Verified: High confidence"]
-    D -->|"< 0.5"| F["⚠️ Warning: Low confidence"]
-    F --> G["Show banner:\nUnable to fully verify\nanswer from documents"]
-    E --> H["Display answer normally"]
-
-    style E fill:#4caf50,color:#fff
-    style F fill:#ff9800,color:#000
-    style G fill:#ff9800,color:#000
-```
-
----
-
-## Risk Analysis & Legal Audit Flow
-
-```mermaid
-flowchart TD
-    A["Document Chunks"] --> B["riskAnalyzer & evidenceAnalyzer"]
-    B --> C["LLM inspects chunks"]
-    C --> D{"Risk Level"}
-    D -->|"High"| E["🔴 High Risk Clauses"]
-    D -->|"Medium"| F["🟡 Medium Risk Clauses"]
-    D -->|"Low"| G["🟢 Low Risk Clauses"]
-    
-    C --> H{"Evidence Quality"}
-    H -->|"Strong"| I["🟢 Signed/Clear Evidence"]
-    H -->|"Weak"| J["🟡 Unsigned/Ambiguous"]
-    
-    E --> K["Risk Report Screen"]
-    F --> K
-    G --> K
-    I --> K
-    J --> K
-    K --> L["Lawyer Questions & Confidence Score"]
-
-    style E fill:#f44336,color:#fff
-    style F fill:#ff9800,color:#000
-    style G fill:#4caf50,color:#fff
-    style I fill:#4caf50,color:#fff
-    style J fill:#ff9800,color:#000
-```
-
----
-
-## Legal Strategy Generation Flow
-
-```mermaid
-flowchart TD
-    A["Document Chunks"] --> B["strategyGenerator.ts"]
-    B --> C["LLM extracts Strategy based on CaseType & Perspective"]
-    C --> D["SWOT Analysis"]
-    C --> E["Legal Arguments & Claims"]
-    D --> F["Strategy Screen"]
-    E --> F
-    F --> G["Next Steps & Action Plan"]
-```
-
----
-
-## Multi-Perspective Comparison Flow
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant PCS as PerspectiveComparisonScreen
-    participant PC as perspectiveComparison.ts
-    participant LLM as llmService
-    
-    User->>PCS: Selects 'Plaintiff' vs 'Defendant'
-    PCS->>PC: comparePerspectives(chunks, pA, pB, caseType)
-    PC->>LLM: generate(Comparison Matrix Prompt)
-    LLM-->>PC: JSON String
-    PC->>PC: Parse Matrix JSON
-    PC-->>PCS: Side A (Claims, Evidence, Risk) vs Side B
-    PCS-->>User: Renders Side-by-Side Comparison Grid
-```
-
----
-
-## Multi-Document Timeline Flow
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant TS as TimelineScreen
-    participant TG as timelineGenerator.ts
-    participant LLM as llmService
-    
-    User->>TS: Taps 'Generate Timeline' for Case
-    TS->>TG: generateTimeline([doc1, doc2])
-    
-    loop For each document
-        loop For each chunk
-            TG->>LLM: generate(Extract Dates/Events Prompt)
-            LLM-->>TG: JSON Array of Events
-            TG->>TG: normalizeDate(event.date)
-            TG->>TG: context.clearCache()
-        end
-    end
-    
-    TG->>TG: Combine all events
-    TG->>TG: Sort chronologically by dateValue
-    TG-->>TS: TimelineEvent[]
-    TS-->>User: Renders Chronological Feed UI
-```
-
----
-
-## Conversation Memory Flow (Phase 11.5 — Planned)
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Store as useChatStore
-    participant LLM as llmService
-
-    User->>Store: "What is the termination clause?"
-    Store->>LLM: generateResponse(question, history=[])
-    LLM-->>Store: "The termination clause states..."
-    Store->>Store: Save to history buffer
-
-    User->>Store: "What happens if I violate it?"
-    Store->>Store: Condense last 5 exchanges
-    Store->>LLM: generateResponse(question, history=[prev exchange])
-
-    Note over LLM: Model sees previous context
-    LLM-->>Store: "If you violate the termination clause..."
-    Store-->>User: Answer with conversational awareness
-```
-
----
-
-## Context Budget Flow (Phase 8 — Planned)
-
-```mermaid
-flowchart TD
-    A["System Prompt (~100 tokens)"] --> E["Token Budget Calculator"]
-    B["Ranked Chunks from BM25"] --> E
-    C["User Question (~50 tokens)"] --> E
-    E --> F{"Total < 1800 tokens?"}
-    F -->|Yes| G["Add next highest-ranked chunk"]
-    G --> F
-    F -->|No| H["Stop adding chunks"]
-    H --> I["Reserve 200 tokens for answer"]
-    I --> J["Final Prompt Sent to LLM"]
-
-    style J fill:#4caf50,color:#fff
-```
+Displayed in SettingsScreen performance dashboard.

@@ -1,171 +1,141 @@
-# Mobile Legal AI Assistant
+# Mobile Legal AI Assistant — Project Overview
 
-## Goal
+> **Branch:** `javascript` — React Native 0.85 / JavaScript implementation
+> **Platform:** Android (primary), iOS (secondary)
+> **Architecture:** Fully offline — no cloud, no internet required after initial model download
 
-Provide a fully offline AI assistant specialized in Indian Law for legal document analysis on Android. All processing happens on-device — no cloud, no internet required after model download.
+---
 
-## System Architecture Overview
+## 🎯 Goal
+
+Provide a **fully offline, on-device AI legal assistant** specialized in **Indian Law** for legal professionals and individuals on Android. All AI processing, document parsing, and storage happens locally — your legal documents never leave the device.
+
+---
+
+## 🏗️ High-Level Architecture
 
 ```mermaid
 graph TB
-    subgraph UI["UI Layer (React Native)"]
+    subgraph UI["UI Layer (React Native / JSX)"]
         HS["HomeScreen"]
-        CS["ChatScreen"]
+        CS["CasesScreen"]
+        CD["CaseDetailsScreen"]
+        CHT["ChatScreen"]
         DS["DocumentsScreen"]
         DDS["DocumentDetailsScreen"]
         SS["SettingsScreen"]
-        RRS["RiskReportScreen (Planned)"]
+        ANA["Analysis Screens (10+)"]
     end
 
-    subgraph State["State Management (Zustand)"]
-        CStore["useChatStore"]
-        DStore["useDocumentStore"]
+    subgraph State["State Management (Zustand v5)"]
+        CaseStore["useCaseStore — Case folders, notes, tags"]
+        ChatStore["useChatStore — Chat history per-case"]
+        DocStore["useDocumentStore — PDF metadata + chunks"]
     end
 
-    subgraph Services["Service Layer"]
-        LLM["llmService.ts"]
-        MM["modelManager.ts"]
-        PDF["pdfService.ts"]
-        RET["retrievalService.ts"]
-        STG["storageService.ts"]
+    subgraph Services["Service Layer (JavaScript)"]
+        LLM["llmService.js — LLM inference API"]
+        MM["modelManager.js — Model lifecycle singleton"]
+        PDF["pdfService.js — PDF text extraction + chunking"]
+        RET["retrievalService.js — BM25 keyword retrieval"]
+        STG["storageService.js — RNFS file I/O"]
+        CTX["contextBudget.js — Token budget manager"]
+        TEL["telemetry.js — Performance tracker"]
+        SEC["secureStorage.js — AES-256 crypto-js storage"]
+        Analyzers["10+ AI Analyzer Services"]
     end
 
-    subgraph Native["Native Layer (Kotlin)"]
-        PE["PdfExtractorModule"]
-        LLAMA["llama.rn / llama.cpp"]
+    subgraph Native["Native Layer (Kotlin / C++)"]
+        PE["PdfExtractorModule (Kotlin + Apache PDFBox)"]
+        LLAMA["llama.rn → llama.cpp (C++)"]
     end
 
     subgraph Storage["On-Device Storage"]
-        AS["AsyncStorage"]
-        FS["Filesystem (RNFS)"]
-        MODEL["GGUF Model File"]
+        AS["AsyncStorage — Encrypted via crypto-js"]
+        FS["RNFS (react-native-fs) — Filesystem access"]
+        MODEL["GGUF Model File (~0.8–2 GB)"]
+        DOCS["Extracted PDF text chunks"]
     end
 
-    CS --> CStore
-    DS --> DStore
-    DDS --> DStore
-    DDS --> LLM
-    CS --> LLM
-    SS --> MM
-
-    CStore --> LLM
-    CStore --> STG
-    DStore --> PDF
-    DStore --> STG
-
-    LLM --> MM
-    MM --> LLAMA
-    PDF --> PE
-
-    STG --> AS
-    MM --> FS
-    MM --> MODEL
+    UI --> State
+    State --> Services
+    Services --> Native
+    Services --> Storage
+    Native --> Storage
 ```
 
-## Current Features (Phase 1–7 Complete)
+---
 
-### Chat
+## 🔄 Request Lifecycle (Chat Example)
 
-- User enters a legal question
-- Local LLM generates a response grounded in Indian legal framework
-- Streaming token display with real-time typing animation
-- Stop/cancel button to abort generation mid-response
-
-### Document Upload
-
-- Upload PDF files via native document picker
-- Extract text offline using custom PdfExtractor native module (PDFBox)
-- Store documents locally with AsyncStorage persistence
-
-### Document Summarization
-
-- Generate AI summary of uploaded PDF
-- Chunk-based processing for large documents
-
-### Ask Document (RAG)
-
-- Ask questions about uploaded PDF
-- BM25 retrieval finds the most relevant chunks
-- Chunks are labeled with `[Chunk X]` for source tracking
-
-Examples:
-
-- What is clause 5?
-- Who are the parties involved?
-- What are the important dates?
-- What are the termination conditions under Indian law?
-
-### Model Management
-
-- Download GGUF models directly from Hugging Face
-- Switch between 3 model options:
-  - Qwen 2.5 3B (Recommended) — 1.96 GB
-  - Qwen 2.5 1.5B (Light) — 1.13 GB
-  - Llama 3.2 1B (Ultra-Light) — 0.81 GB
-- Persistent model preference across app restarts
-- Auto-load last used model on startup
-- Load/Unload model manually from Settings
-
-### Indian Law Specialization
-
-- System prompts reference: Constitution of India, BNS/IPC, CrPC/BNSS, IEA/BSA, CPC
-- All AI responses are grounded in Indian legal context
-- Disclaimer: responses are informational only, not legal advice
-
-## Planned Features (Phase 8–17)
-
-```mermaid
-graph LR
-    P8["Phase 8\nProduction\nHardening"] --> P85["Phase 8.5\nRetrieval\nBenchmark"]
-    P85 --> P86["Phase 8.6\nHallucination\nDetection"]
-    P86 --> P87["Phase 8.7\nCitation\nEngine"]
-    P87 --> P9["Phase 9\nEvaluation\nFramework"]
-    P9 --> P105["Phase 10.5\nCorpus\nManager"]
-    P105 --> P115["Phase 11.5\nConversation\nMemory"]
-    P115 --> P13["Phase 13\nRisk\nAnalyzer"]
-    P13 --> P15["Phase 15\nELI5\nMode"]
-    P15 --> P16["Phase 16\nPerformance\nDashboard"]
-    P16 --> P17["Phase 17\nSecurity\n& Privacy"]
-
-    style P8 fill:#ff9800,color:#000
-    style P85 fill:#ff9800,color:#000
-    style P86 fill:#ff9800,color:#000
-    style P87 fill:#ff9800,color:#000
-    style P9 fill:#2196f3,color:#fff
-    style P105 fill:#2196f3,color:#fff
-    style P115 fill:#4caf50,color:#fff
-    style P13 fill:#4caf50,color:#fff
-    style P15 fill:#4caf50,color:#fff
-    style P16 fill:#9c27b0,color:#fff
-    style P17 fill:#9c27b0,color:#fff
+```
+User Types Message
+       ↓
+ChatScreen.jsx → useChatStore.addMessage()
+       ↓
+llmService.generateResponse(prompt, history, perspective, caseType)
+       ↓
+modelManager.getContext() → llama.rn context
+       ↓
+context.completion({ messages, n_predict: 1024, temperature: 0.7 })
+       ↓
+Streaming tokens → onToken() callback → UI updates in real-time
+       ↓
+telemetry.recordInference(tokens, duration)
+       ↓
+Complete text returned → stored in useChatStore
 ```
 
-- Production hardening (crash recovery, context budget, citation engine)
-- Retrieval quality evaluation and hallucination detection
-- Built-in Indian legal knowledge base (Constitution, BNS, BNSS, BSA, CPC, RTI)
-- Conversation memory for follow-up questions
-- Legal risk analyzer for contracts
-- Document comparison (V1 vs V2 diff)
-- Plain English / ELI5 explanation mode
-- Performance telemetry dashboard
-- Encrypted storage and privacy controls
+---
 
-## Not Included (Deferred)
+## 📦 Technology Stack
 
-- Cloud sync
-- User accounts
-- Multi-user support
-- Online AI APIs
-- Voice input/output (Phase 12 — future)
-- OCR for scanned documents
+| Layer | Technology |
+|---|---|
+| Framework | React Native 0.85.3 |
+| Language | JavaScript (JSX) |
+| State Management | Zustand v5 (with `persist` middleware) |
+| Navigation | React Navigation 7 (Native Stack) |
+| LLM Runtime | llama.rn v0.12.4 (bindings for llama.cpp) |
+| PDF Extraction | Native Kotlin module + Apache PDFBox |
+| Retrieval | Custom BM25 implementation (zero dependencies) |
+| Storage | AsyncStorage + react-native-fs + AES-256 crypto-js |
+| Testing | Jest 29 (unit) + custom JS stress/fuzz/soak test runners |
+| Linting | ESLint + Prettier |
+| Min Node | ≥ 22.11.0 |
 
-## Target Device
+---
 
-- Android (6 GB+ RAM recommended)
-- Tested on Android 17 (API 36) emulator
+## 🤖 Supported AI Models
 
-## Local Models
+All models run **100% on-device** via llama.cpp/llama.rn:
 
-- Qwen 2.5 3B Instruct GGUF (Q4_K_M) — primary
-- Qwen 2.5 1.5B Instruct GGUF (Q4_K_M) — lightweight
-- Llama 3.2 1B Instruct GGUF (Q4_K_M) — ultra-light
+| Model | Size | RAM Requirement | Notes |
+|---|---|---|---|
+| Qwen 2.5 3B Instruct Q4_K_M | 1.96 GB | 6 GB+ recommended | Best quality & reasoning |
+| Qwen 2.5 1.5B Instruct Q4_K_M | 1.13 GB | 4 GB+ | Balanced speed/quality |
+| Llama 3.2 1B Instruct Q4_K_M | 0.81 GB | 3 GB+ | Ultra-fast, minimal footprint |
+
+**Inference Parameters:**
+- **Context Window:** 2048 tokens (n_ctx) — conservative for device safety
+- **CPU-only inference** — `n_gpu_layers: 0` (Adreno GPU crashes on flash attention)
+- **use_mlock: true** — prevents OS from paging model weights to disk
+- **Prompt Format:** Qwen 2.5 ChatML (`<|im_start|>` / `<|im_end|>`)
+
+---
+
+## 🇮🇳 Indian Law Specialization
+
+All LLM system prompts explicitly reference the Indian legal framework:
+- **Constitution of India**
+- **Bharatiya Nyaya Sanhita (BNS) / Indian Penal Code (IPC)**
+- **Code of Criminal Procedure (CrPC) / Bharatiya Nagarik Suraksha Sanhita (BNSS)**
+- **Indian Evidence Act (IEA) / Bharatiya Sakshya Adhiniyam (BSA)**
+- **Code of Civil Procedure (CPC)**
+- **RTI Act, Arbitration and Conciliation Act, and other Indian acts**
+
+---
+
+## 📁 Branch Scope
+
+The `javascript` branch contains the complete React Native + JavaScript implementation with **26 completed phases** covering all core AI analysis features, evaluation pipelines, and testing infrastructure.
