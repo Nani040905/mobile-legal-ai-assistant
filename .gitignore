@@ -32,3 +32,11 @@ dummy.pdf
 *.log
 *.tmp
 .cache/
+
+# ─── Android Gradle Native ───
+.gradle/
+/build/
+/app/build/
+.kotlin/
+app/.cxx/
+.cxx/
