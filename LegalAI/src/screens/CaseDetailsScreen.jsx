@@ -151,6 +151,12 @@ const CaseDetailsScreen = () => {
               navigation.navigate('EvidenceChain', { caseId: caseObj.id, caseTitle: caseObj.title });
             } else if (title === 'Missing Docs') {
               navigation.navigate('MissingDocs', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Hearing Prep') {
+              navigation.navigate('HearingPrep', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Opponent Predictor') {
+              navigation.navigate('OpponentPredictor', { caseId: caseObj.id, caseTitle: caseObj.title });
+            } else if (title === 'Client Questions') {
+              navigation.navigate('ClientQuestions', { caseId: caseObj.id, caseTitle: caseObj.title });
             }
           } else {
             Alert.alert(
@@ -338,9 +344,9 @@ const CaseDetailsScreen = () => {
             {renderToolItem('Contradictions', '⚠️', true)}
             {renderToolItem('Entity Tracker', '👥', true)}
             {renderToolItem('Missing Docs', '📂', true)}
-            {renderToolItem('Hearing Prep', '⚡', false)}
-            {renderToolItem('Opponent Predictor', '🎯', false)}
-            {renderToolItem('Client Questions', '❓', false)}
+            {renderToolItem('Hearing Prep', '⚡', true)}
+            {renderToolItem('Opponent Predictor', '🎯', true)}
+            {renderToolItem('Client Questions', '❓', true)}
             {renderToolItem('Draft Notice', '📝', false)}
             {renderToolItem('Indian Law Sections', '📖', false)}
             {renderToolItem('Evidence Chain', '🔗', true)}
