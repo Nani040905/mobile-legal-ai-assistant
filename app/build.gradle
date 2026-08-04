@@ -4,6 +4,7 @@ System.setProperty("java.io.tmpdir", "C:/Users/hp/.gradle")
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "kotlin-kapt"
+apply plugin: "org.jetbrains.kotlin.plugin.compose"
 
 
 /**
@@ -40,6 +41,9 @@ android {
     }
 
     namespace "com.legalai"
+    buildFeatures {
+        compose true
+    }
     defaultConfig {
         applicationId "com.legalai"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -74,6 +78,16 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "androidx.activity:activity-ktx:1.8.2"
+
+    // Compose dependencies
+    implementation platform("androidx.compose:compose-bom:2024.02.02")
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.ui:ui-graphics"
+    implementation "androidx.compose.ui:ui-tooling-preview"
+    implementation "androidx.compose.material3:material3"
+    implementation "androidx.activity:activity-compose:1.8.2"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0"
+    implementation "androidx.navigation:navigation-compose:2.7.7"
 
     // Apache PDFBox port for Android (used for offline PDF text extraction)
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
