@@ -22,6 +22,7 @@
  * 3. llama.rn finishes loading → status becomes 'ready'
  * 4. User taps "Unload Model" or app backgrounds → releaseModel() → sta/* Import the initLlama function from llama.rn — this is the main entry point */
 import { initLlama } from 'llama.rn';
+import { recordModelLoad } from './telemetry';
 
 /* Import RNFS to check if the model file exists on the device filesystem */
 import RNFS from 'react-native-fs';
@@ -327,6 +328,7 @@ const initializeModel = async () => {
 
     console.log(`[ModelManager] Loading model from: ${resolvedModelPath}`);
 
+    const startTime = Date.now();
     modelContext = await initLlama({
       model: resolvedModelPath,
       n_ctx: 2048,
@@ -334,6 +336,8 @@ const initializeModel = async () => {
       use_mlock: true,
       n_threads: 4
     });
+    const duration = Date.now() - startTime;
+    recordModelLoad(duration);
 
     console.log('[ModelManager] Model loaded successfully!');
     setStatus('ready');

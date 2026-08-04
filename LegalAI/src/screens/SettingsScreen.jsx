@@ -47,6 +47,9 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import modelManager from '../services/modelManager';
 import useDocumentStore from '../store/useDocumentStore';
 import useChatStore from '../store/useChatStore';
+import useCaseStore from '../store/useCaseStore';
+import { getTelemetryData, resetTelemetry } from '../services/telemetry';
+import { Share } from 'react-native';
 
 /*
  * SettingsScreen — Displays model info, storage stats, and a clear data button.
@@ -76,6 +79,88 @@ const SettingsScreen = () => {
   const documentCount = documents.length;
   const totalDocSizeKB = documents.reduce((sum, doc) => sum + doc.size, 0) / 1024;
   const totalDocSizeMB = (totalDocSizeKB / 1024).toFixed(2);
+
+  const [telemetry, setTelemetry] = useState(getTelemetryData());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTelemetry(getTelemetryData());
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleExportMetadata = async () => {
+    const cases = useCaseStore.getState().cases;
+    const docs = useDocumentStore.getState().documents;
+    const metadataPayload = {
+      exportTimestamp: Date.now(),
+      platform: 'Android',
+      casesCount: cases.length,
+      documentsCount: docs.length,
+      cases: cases.map(c => ({
+        id: c.id,
+        title: c.title,
+        clientName: c.clientName,
+        court: c.court,
+        caseType: c.caseType,
+        status: c.status,
+        nextHearingDate: c.nextHearingDate,
+        notes: c.notes,
+        tags: c.tags,
+        documentCount: c.documents ? c.documents.length : 0
+      })),
+      documents: docs.map(d => ({
+        id: d.id,
+        name: d.name,
+        size: d.size,
+        uploadedAt: d.uploadedAt,
+        summary: d.summary
+      }))
+    };
+    try {
+      await Share.share({
+        title: 'LegalAI App Metadata Export',
+        message: JSON.stringify(metadataPayload, null, 2)
+      });
+    } catch (err) {
+      Alert.alert('Export Failed', err.message);
+    }
+  };
+
+  const handleDeleteAllData = () => {
+    Alert.alert(
+      'DELETE ALL DATA ⚠️',
+      'Are you sure you want to permanently delete all case folders, document files, and chat histories? This action is IRREVERSIBLE.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Proceed',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Final Confirmation 🚨',
+              'This will erase everything. Are you absolutely certain?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Everything',
+                  style: 'destructive',
+                  onPress: () => {
+                    clearDocuments();
+                    clearMessages();
+                    useCaseStore.getState().clearAllCases();
+                    resetTelemetry();
+                    setTelemetry(getTelemetryData());
+                    Alert.alert('Erase Complete', 'All application data has been permanently cleared.');
+                  }
+                }
+              ]
+            );
+          }
+        }
+      ]
+    );
+  };
 
   /* Subscribe to model status and progress changes from the manager */
   useEffect(() => {
@@ -472,6 +557,73 @@ const SettingsScreen = () => {
           </View>
         </View>
 
+        {/* ─── PERFORMANCE CARD ─── */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardIcon}>📊</Text>
+            <Text style={styles.cardTitle}>System Performance</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Estimated RAM Footprint</Text>
+            <Text style={styles.infoValue}>{telemetry.ramUsageMB} MB</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Total Document Storage</Text>
+            <Text style={styles.infoValue}>{telemetry.storageSizeMB} MB</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Model Load Latency</Text>
+            <Text style={styles.infoValue}>{telemetry.modelLoadTime > 0 ? `${telemetry.modelLoadTime} ms` : 'Not loaded'}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Inference Latency</Text>
+            <Text style={styles.infoValue}>{telemetry.lastInferenceTime > 0 ? `${telemetry.lastInferenceTime} ms` : 'N/A'}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Generation Speed</Text>
+            <Text style={styles.infoValue}>
+              {telemetry.lastInferenceSpeed > 0 ? `${telemetry.lastInferenceSpeed} tok/s` : 'N/A'}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Total Tokens Generated</Text>
+            <Text style={styles.infoValue}>{telemetry.totalTokensGenerated}</Text>
+          </View>
+        </View>
+
+        {/* ─── PRIVACY & SECURITY CARD ─── */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardIcon}>🛡️</Text>
+            <Text style={styles.cardTitle}>Privacy & Security</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Local-Only Processing</Text>
+            <View style={styles.activeBadge}>
+              <Text style={styles.activeBadgeText}>ACTIVE ✅</Text>
+            </View>
+          </View>
+
+          <Text style={styles.helperText}>
+            All document indexing and AI inference runs completely offline on your device. No data is ever transmitted to external servers.
+          </Text>
+
+          <TouchableOpacity style={styles.actionButton} onPress={handleExportMetadata}>
+            <Text style={styles.buttonText}>📤 Export Metadata JSON</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.dangerButton, { marginTop: SPACING.md }]} onPress={handleDeleteAllData}>
+            <Text style={styles.dangerButtonText}>⚠️ DELETE ALL APP DATA</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ─── BENCHMARKS CARD ─── */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -862,6 +1014,19 @@ const styles = StyleSheet.create({
   },
   flex1: {
     flex: 1
+  },
+  activeBadge: {
+    backgroundColor: COLORS.success + '20',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.success
+  },
+  activeBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: COLORS.success
   }
 });
 
