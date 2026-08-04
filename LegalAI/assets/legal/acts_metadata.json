@@ -1,0 +1,46 @@
+{
+  "acts": [
+    {
+      "id": "ipc_1860",
+      "name": "Indian Penal Code",
+      "abbreviation": "IPC",
+      "year": 1860,
+      "totalSections": 511
+    },
+    {
+      "id": "bns_2023",
+      "name": "Bharatiya Nyaya Sanhita",
+      "abbreviation": "BNS",
+      "year": 2023,
+      "totalSections": 358
+    },
+    {
+      "id": "crpc_1973",
+      "name": "Code of Criminal Procedure",
+      "abbreviation": "CrPC",
+      "year": 1973,
+      "totalSections": 484
+    },
+    {
+      "id": "bnss_2023",
+      "name": "Bharatiya Nagarik Suraksha Sanhita",
+      "abbreviation": "BNSS",
+      "year": 2023,
+      "totalSections": 531
+    },
+    {
+      "id": "iea_1872",
+      "name": "Indian Evidence Act",
+      "abbreviation": "IEA",
+      "year": 1872,
+      "totalSections": 167
+    },
+    {
+      "id": "bsa_2023",
+      "name": "Bharatiya Sakshya Adhiniyam",
+      "abbreviation": "BSA",
+      "year": 2023,
+      "totalSections": 170
+    }
+  ]
+}
