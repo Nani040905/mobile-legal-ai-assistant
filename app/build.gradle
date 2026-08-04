@@ -3,7 +3,7 @@ System.setProperty("java.io.tmpdir", "C:/Users/hp/.gradle")
 
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
-apply plugin: "kotlin-kapt"
+apply plugin: "com.google.devtools.ksp"
 apply plugin: "org.jetbrains.kotlin.plugin.compose"
 
 
@@ -36,8 +36,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
-        languageVersion = '2.0'
-        apiVersion = '2.0'
     }
 
     namespace "com.legalai"
@@ -95,15 +93,11 @@ dependencies {
     // Room components
     implementation "androidx.room:room-runtime:2.7.0"
     implementation "androidx.room:room-ktx:2.7.0"
-    kapt "androidx.room:room-compiler:2.7.0"
+    ksp "androidx.room:room-compiler:2.7.0"
 
     // Test dependencies
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3"
 }
-
-tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptWithoutKotlincTask).configureEach {
-    kaptProcessJvmArgs.add("-Dorg.sqlite.tmpdir=C:/Users/hp/.gradle")
-    kaptProcessJvmArgs.add("-Djava.io.tmpdir=C:/Users/hp/.gradle")
-}
+// KSP configuration completed
 
