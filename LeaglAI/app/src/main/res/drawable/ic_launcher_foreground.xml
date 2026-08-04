@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Scale of Justice / Legal Shield Vector -->
+    <!-- Pillar / Stand -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M52,32h4v36h-4z" />
+    <!-- Base -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M42,68h24v4h-24z" />
+    <!-- Crossbar -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M30,36h48v3h-48z" />
+    <!-- Top Finial -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M54,26l4,6h-8z" />
+    <!-- Left Scale Pan strings -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M32,39l-6,14h12l-6-14z" />
+    <!-- Right Scale Pan strings -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M76,39l-6,14h12l-6-14z" />
+    <!-- Left Pan -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M24,53c0,4.4 4.5,8 10,8s10-3.6 10-8h-20z" />
+    <!-- Right Pan -->
+    <path
+        android:fillColor="#D4A846"
+        android:pathData="M66,53c0,4.4 4.5,8 10,8s10-3.6 10-8h-20z" />
+</vector>

@@ -1,0 +1,6 @@
+{
+  "name": "Legal AI",
+  "description": "Offline-first Mobile Legal AI Assistant with local LLMs, biometric authentication, and automatic cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
