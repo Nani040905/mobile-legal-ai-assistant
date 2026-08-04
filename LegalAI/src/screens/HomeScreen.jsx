@@ -92,6 +92,13 @@ const TILES = [
   description: 'Upload and manage legal PDFs'
 },
 {
+  id: 'drafts',
+  title: 'Legal Drafts',
+  icon: '📝',
+  route: 'DraftGenerator',
+  description: 'Create legal drafts and notices'
+},
+{
   id: 'settings',
   title: 'Settings',
   icon: '⚙️',
